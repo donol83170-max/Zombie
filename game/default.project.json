@@ -47,35 +47,45 @@
     },
 
     "StarterGui": {
-      "$className": "StarterGui"
+      "$className": "StarterGui",
+      "$ignoreUnknownInstances": true
     },
 
     "Workspace": {
       "$className": "Workspace",
+      "$ignoreUnknownInstances": true,
       "SpawnPoints": {
-        "$className": "Folder"
+        "$className": "Folder",
+        "$ignoreUnknownInstances": true
       },
       "ZombieSpawns": {
-        "$className": "Folder"
+        "$className": "Folder",
+        "$ignoreUnknownInstances": true
       },
       "WallBuys": {
-        "$className": "Folder"
+        "$className": "Folder",
+        "$ignoreUnknownInstances": true
       },
       "Doors": {
-        "$className": "Folder"
+        "$className": "Folder",
+        "$ignoreUnknownInstances": true
       },
       "Zones": {
-        "$className": "Folder"
+        "$className": "Folder",
+        "$ignoreUnknownInstances": true
       }
     },
 
     "ServerStorage": {
       "$className": "ServerStorage",
+      "$ignoreUnknownInstances": true,
       "ZombieTemplates": {
-        "$className": "Folder"
+        "$className": "Folder",
+        "$ignoreUnknownInstances": true
       },
       "WeaponTemplates": {
-        "$className": "Folder"
+        "$className": "Folder",
+        "$ignoreUnknownInstances": true
       }
     },
 

@@ -115,44 +115,62 @@ local function createZombieModel(zombieType, wave)
 		config = ZombieConfig.Types.Basic
 	end
 
-	-- Créer un modèle zombie simple (NPC humanoïde)
-	local zombie = Instance.new("Model")
-	zombie.Name = "Enemy_" .. zombieType
+	local zombie
+	local templates = ServerStorage:FindFirstChild("ZombieTemplates")
+	local template = templates and (templates:FindFirstChild("Enemy_" .. zombieType) or templates:FindFirstChild(zombieType))
 
-	-- Créer les parties du corps
-	local torso = Instance.new("Part")
-	torso.Name = "HumanoidRootPart"
-	torso.Size = Vector3.new(2 * config.scale, 2 * config.scale, 1 * config.scale)
-	torso.Color = config.color
-	torso.Anchored = false
-	torso.CanCollide = true
-	torso.Parent = zombie
+	if template then
+		zombie = template:Clone()
+		zombie.Name = "Enemy_" .. zombieType
+		-- Assurer l'existence du PrimaryPart (généralement HumanoidRootPart)
+		if not zombie.PrimaryPart then
+			zombie.PrimaryPart = zombie:FindFirstChild("HumanoidRootPart") or zombie:FindFirstChild("Torso")
+		end
+	else
+		-- Créer un modèle zombie simple (NPC humanoïde)
+		zombie = Instance.new("Model")
+		zombie.Name = "Enemy_" .. zombieType
 
-	local head = Instance.new("Part")
-	head.Name = "Head"
-	head.Shape = Enum.PartType.Ball
-	head.Size = Vector3.new(1.2 * config.scale, 1.2 * config.scale, 1.2 * config.scale)
-	head.Color = config.color
-	head.Anchored = false
-	head.CanCollide = false
-	head.Parent = zombie
+		-- Créer les parties du corps
+		local torso = Instance.new("Part")
+		torso.Name = "HumanoidRootPart"
+		torso.Size = Vector3.new(2 * config.scale, 2 * config.scale, 1 * config.scale)
+		torso.Color = config.color
+		torso.Anchored = false
+		torso.CanCollide = true
+		torso.Parent = zombie
 
-	-- Weld head to torso
-	local weld = Instance.new("WeldConstraint")
-	weld.Part0 = torso
-	weld.Part1 = head
-	weld.Parent = head
-	head.CFrame = torso.CFrame * CFrame.new(0, 1.5 * config.scale, 0)
+		local head = Instance.new("Part")
+		head.Name = "Head"
+		head.Shape = Enum.PartType.Ball
+		head.Size = Vector3.new(1.2 * config.scale, 1.2 * config.scale, 1.2 * config.scale)
+		head.Color = config.color
+		head.Anchored = false
+		head.CanCollide = false
+		head.Parent = zombie
+
+		-- Weld head to torso
+		local weld = Instance.new("WeldConstraint")
+		weld.Part0 = torso
+		weld.Part1 = head
+		weld.Parent = head
+		head.CFrame = torso.CFrame * CFrame.new(0, 1.5 * config.scale, 0)
+		
+		zombie.PrimaryPart = torso
+	end
 
 	-- Humanoid
-	local humanoid = Instance.new("Humanoid")
+	local humanoid = zombie:FindFirstChildOfClass("Humanoid")
+	if not humanoid then
+		humanoid = Instance.new("Humanoid")
+		print("[WaveManager] Ajout d'un Humanoid manquant sur le template " .. zombieType)
+		humanoid.Parent = zombie
+	end
+	
 	local hp = config.baseHp + (config.hpPerWave * wave)
 	humanoid.MaxHealth = hp
 	humanoid.Health = hp
 	humanoid.WalkSpeed = config.speed
-	humanoid.Parent = zombie
-
-	zombie.PrimaryPart = torso
 
 	-- Attributs custom
 	zombie:SetAttribute("ZombieType", zombieType)
@@ -164,14 +182,17 @@ local function createZombieModel(zombieType, wave)
 		zombie:SetAttribute("ExplosionRadius", config.explosionRadius)
 		zombie:SetAttribute("TriggerDistance", config.triggerDistance)
 
-		-- Particule pour zombies explosifs
-		local particles = Instance.new("ParticleEmitter")
-		particles.Color = ColorSequence.new(Color3.fromRGB(255, 100, 0))
-		particles.Size = NumberSequence.new(0.5)
-		particles.Rate = 20
-		particles.Lifetime = NumberRange.new(0.5, 1)
-		particles.Speed = NumberRange.new(1, 3)
-		particles.Parent = torso
+		-- Ajouter particule seulement si pas déjà géré par le modèle custom
+		local torso = zombie:FindFirstChild("HumanoidRootPart") or zombie.PrimaryPart
+		if torso and not torso:FindFirstChildOfClass("ParticleEmitter") then
+			local particles = Instance.new("ParticleEmitter")
+			particles.Color = ColorSequence.new(Color3.fromRGB(255, 100, 0))
+			particles.Size = NumberSequence.new(0.5)
+			particles.Rate = 20
+			particles.Lifetime = NumberRange.new(0.5, 1)
+			particles.Speed = NumberRange.new(1, 3)
+			particles.Parent = torso
+		end
 	end
 
 	return zombie

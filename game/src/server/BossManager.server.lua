@@ -92,47 +92,74 @@ local function spawnBoss(wave)
 	ShowNotification:FireAllClients("⚠️ BOSS INCOMING !", "#FF0000", 3)
 	task.wait(3)
 
-	-- Créer le boss
-	local boss = Instance.new("Model")
-	boss.Name = "Enemy_Boss"
+	local boss
+	local ServerStorage = game:GetService("ServerStorage")
+	local templates = ServerStorage:FindFirstChild("ZombieTemplates")
+	local template = templates and (templates:FindFirstChild("Enemy_Boss") or templates:FindFirstChild("Boss"))
 
-	local torso = Instance.new("Part")
-	torso.Name = "HumanoidRootPart"
-	torso.Size = Vector3.new(2 * bossConfig.scale, 2 * bossConfig.scale, 1 * bossConfig.scale)
-	torso.Color = bossConfig.color
-	torso.Anchored = false
-	torso.CanCollide = true
-	torso.Parent = boss
+	if template then
+		boss = template:Clone()
+		boss.Name = "Enemy_Boss"
+		if not boss.PrimaryPart then
+			boss.PrimaryPart = boss:FindFirstChild("HumanoidRootPart") or boss:FindFirstChild("Torso")
+		end
+	else
+		-- Créer le boss
+		boss = Instance.new("Model")
+		boss.Name = "Enemy_Boss"
 
-	local head = Instance.new("Part")
-	head.Name = "Head"
-	head.Shape = Enum.PartType.Ball
-	head.Size = Vector3.new(1.5 * bossConfig.scale, 1.5 * bossConfig.scale, 1.5 * bossConfig.scale)
-	head.Color = bossConfig.color
-	head.Anchored = false
-	head.CanCollide = false
-	head.Parent = boss
+		local torso = Instance.new("Part")
+		torso.Name = "HumanoidRootPart"
+		torso.Size = Vector3.new(2 * bossConfig.scale, 2 * bossConfig.scale, 1 * bossConfig.scale)
+		torso.Color = bossConfig.color
+		torso.Anchored = false
+		torso.CanCollide = true
+		torso.Parent = boss
 
-	local weld = Instance.new("WeldConstraint")
-	weld.Part0 = torso
-	weld.Part1 = head
-	weld.Parent = head
-	head.CFrame = torso.CFrame * CFrame.new(0, 2 * bossConfig.scale, 0)
+		local head = Instance.new("Part")
+		head.Name = "Head"
+		head.Shape = Enum.PartType.Ball
+		head.Size = Vector3.new(1.5 * bossConfig.scale, 1.5 * bossConfig.scale, 1.5 * bossConfig.scale)
+		head.Color = bossConfig.color
+		head.Anchored = false
+		head.CanCollide = false
+		head.Parent = boss
 
-	-- Aura rouge
-	local aura = Instance.new("ParticleEmitter")
-	aura.Color = ColorSequence.new(Color3.fromRGB(255, 0, 0))
-	aura.Size = NumberSequence.new(2)
-	aura.Rate = 30
-	aura.Lifetime = NumberRange.new(0.5, 1)
-	aura.Speed = NumberRange.new(2, 5)
-	aura.Parent = torso
+		local weld = Instance.new("WeldConstraint")
+		weld.Part0 = torso
+		weld.Part1 = head
+		weld.Parent = head
+		head.CFrame = torso.CFrame * CFrame.new(0, 2 * bossConfig.scale, 0)
+		boss.PrimaryPart = torso
+	end
 
-	local humanoid = Instance.new("Humanoid")
+	local torso = boss.PrimaryPart or boss:FindFirstChild("HumanoidRootPart")
+
+	-- Aura rouge (seulement si pas de particule existante)
+	if torso and not torso:FindFirstChildOfClass("ParticleEmitter") then
+		local aura = Instance.new("ParticleEmitter")
+		aura.Color = ColorSequence.new(Color3.fromRGB(255, 0, 0))
+		aura.Size = NumberSequence.new(2)
+		aura.Rate = 30
+		aura.Lifetime = NumberRange.new(0.5, 1)
+		aura.Speed = NumberRange.new(2, 5)
+		aura.Parent = torso
+	end
+
+	local humanoid = boss:FindFirstChildOfClass("Humanoid")
+	if not humanoid then
+		humanoid = Instance.new("Humanoid")
+		print("[BossManager] Ajout d'un Humanoid manquant sur le template Boss")
+		humanoid.Parent = boss
+	end
+	
 	humanoid.MaxHealth = hp
 	humanoid.Health = hp
 	humanoid.WalkSpeed = bossConfig.speed
-	humanoid.Parent = boss
+	
+	if not humanoid.Parent then
+	   humanoid.Parent = boss
+	end
 
 	boss.PrimaryPart = torso
 	boss:SetAttribute("ZombieType", "Boss")
