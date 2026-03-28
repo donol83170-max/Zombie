@@ -290,7 +290,7 @@ end
 -- Le WaveManager fire WaveCompleted après chaque manche
 -- On écoute UpdateWave pour savoir quand spawn le boss
 
-UpdateWave.Event = nil -- C'est un RemoteEvent, on ne peut pas écouter serveur→serveur directement
+-- Alternative : surveiller les leaderstats pour détecter la manche
 
 -- Alternative : surveiller les leaderstats pour détecter la manche
 -- Ou utiliser _G pour communiquer

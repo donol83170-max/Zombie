@@ -66,12 +66,16 @@ end
 local function getZombieSpawnPoints()
 	local spawns = workspace:FindFirstChild("ZombieSpawns")
 	if not spawns then
-		warn("[WaveManager] Dossier ZombieSpawns introuvable dans Workspace !")
-		-- Créer des spawns par défaut
+		warn("[WaveManager] Dossier ZombieSpawns introuvable dans Workspace ! Création...")
 		spawns = Instance.new("Folder")
 		spawns.Name = "ZombieSpawns"
 		spawns.Parent = workspace
+	end
 
+	local children = spawns:GetChildren()
+	
+	if #children == 0 then
+		warn("[WaveManager] Le dossier ZombieSpawns est vide ! Création de 4 points de spawn par défaut...")
 		for i = 1, 4 do
 			local part = Instance.new("Part")
 			part.Name = "Spawn_" .. i
@@ -82,8 +86,10 @@ local function getZombieSpawnPoints()
 			part.Position = Vector3.new(math.random(-50, 50), 5, math.random(-50, 50))
 			part.Parent = spawns
 		end
+		children = spawns:GetChildren()
 	end
-	return spawns:GetChildren()
+	
+	return children
 end
 
 -- === ZOMBIE CREATION ===
@@ -125,6 +131,13 @@ local function createZombieModel(zombieType, wave)
 		-- Assurer l'existence du PrimaryPart (généralement HumanoidRootPart)
 		if not zombie.PrimaryPart then
 			zombie.PrimaryPart = zombie:FindFirstChild("HumanoidRootPart") or zombie:FindFirstChild("Torso")
+		end
+		
+		-- S'assurer que le zombie téléchargé peut bouger (désancrer toutes les parts)
+		for _, desc in ipairs(zombie:GetDescendants()) do
+			if desc:IsA("BasePart") then
+				desc.Anchored = false
+			end
 		end
 	else
 		-- Créer un modèle zombie simple (NPC humanoïde)
@@ -404,7 +417,9 @@ end
 -- === DÉMARRAGE ===
 
 -- Attendre qu'au moins 1 joueur soit connecté
-Players.PlayerAdded:Wait()
+if #Players:GetPlayers() == 0 then
+	Players.PlayerAdded:Wait()
+end
 task.wait(3) -- Délai pour laisser le temps au lobby
 
 -- Détecter la mort des joueurs
