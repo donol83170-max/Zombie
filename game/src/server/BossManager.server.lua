@@ -81,6 +81,12 @@ local function createBossMinion(position)
 	minion:SetAttribute("Damage", 10)
 	minion:SetAttribute("Reward", 10)
 
+	for _, part in ipairs(minion:GetDescendants()) do
+		if part:IsA("BasePart") then
+			part.CollisionGroup = "Zombies"
+		end
+	end
+
 	return minion
 end
 
@@ -170,6 +176,13 @@ local function spawnBoss(wave)
 	-- Position de spawn
 	local spawnPos = Vector3.new(0, 5, -50)
 	boss:SetPrimaryPartCFrame(CFrame.new(spawnPos))
+	
+	for _, part in ipairs(boss:GetDescendants()) do
+		if part:IsA("BasePart") then
+			part.CollisionGroup = "Zombies"
+		end
+	end
+	
 	boss.Parent = workspace
 	currentBoss = boss
 

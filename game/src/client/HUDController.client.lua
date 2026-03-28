@@ -205,12 +205,24 @@ local function createHUD()
 	goStats.ZIndex = 11
 	goStats.Parent = gameOverFrame
 
+	-- === DAMAGE FLASH (plein écran) ===
+	local damageFlash = Instance.new("Frame")
+	damageFlash.Name = "DamageFlash"
+	damageFlash.Size = UDim2.new(1, 0, 1, 0)
+	damageFlash.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+	damageFlash.BackgroundTransparency = 1
+	damageFlash.BorderSizePixel = 0
+	damageFlash.ZIndex = 0
+	damageFlash.Parent = screenGui
+
 	return screenGui
 end
 
 local hud = createHUD()
 
 -- === FONCTIONS DE MISE À JOUR ===
+
+local lastHp = 100
 
 local function updateHealth(hp, maxHp)
 	local frame = hud:FindFirstChild("HealthFrame")
@@ -238,6 +250,17 @@ local function updateHealth(hp, maxHp)
 	if label then
 		label.Text = math.floor(hp) .. " / " .. math.floor(maxHp)
 	end
+
+	if hp < lastHp and hp > 0 then
+		local flash = hud:FindFirstChild("DamageFlash")
+		if flash then
+			flash.BackgroundTransparency = 0.5
+			TweenService:Create(flash, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				BackgroundTransparency = 1
+			}):Play()
+		end
+	end
+	lastHp = hp
 end
 
 local function showNotification(text, color, duration)

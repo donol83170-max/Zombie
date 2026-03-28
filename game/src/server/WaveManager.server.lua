@@ -183,7 +183,13 @@ local function createZombieModel(zombieType, wave)
 	local hp = config.baseHp + (config.hpPerWave * wave)
 	humanoid.MaxHealth = hp
 	humanoid.Health = hp
-	humanoid.WalkSpeed = config.speed
+	
+	-- Les zombies sont plus lents pendant les 5 premières manches (Manche 1 = 60%, Manche 5 = 100%)
+	local speedMult = 1
+	if wave < 5 then
+		speedMult = 0.5 + (wave * 0.1)
+	end
+	humanoid.WalkSpeed = config.speed * speedMult
 
 	-- Attributs custom
 	zombie:SetAttribute("ZombieType", zombieType)
@@ -205,6 +211,12 @@ local function createZombieModel(zombieType, wave)
 			particles.Lifetime = NumberRange.new(0.5, 1)
 			particles.Speed = NumberRange.new(1, 3)
 			particles.Parent = torso
+		end
+	end
+
+	for _, part in ipairs(zombie:GetDescendants()) do
+		if part:IsA("BasePart") then
+			part.CollisionGroup = "Zombies"
 		end
 	end
 
@@ -268,7 +280,14 @@ local function setupZombieAI(zombie)
 				if dist <= (GameConfig.ZOMBIE_ATTACK_RANGE or 5) then
 					local targetHumanoid = target.Character:FindFirstChildOfClass("Humanoid")
 					if targetHumanoid and targetHumanoid.Health > 0 then
-						targetHumanoid:TakeDamage(damage)
+						-- Cooldown global de 1 seconde pour le joueur (I-Frames)
+						-- Évite de se faire One-Shot si 8 zombies tapent en même temps
+						local lastHit = target.Character:GetAttribute("LastHitTime") or 0
+						if tick() - lastHit >= 1 then
+							target.Character:SetAttribute("LastHitTime", tick())
+							-- On force 25 dégâts pour tuer en exactement 4 coups (sur 100 HP)
+							targetHumanoid:TakeDamage(25) 
+						end
 					end
 				end
 			end
@@ -372,7 +391,16 @@ local function gameLoop()
 		ShowNotification:FireAllClients("MANCHE " .. currentWave, "#FFFFFF", 3)
 
 		-- Délai avant le début de la manche
-		task.wait(GameConfig.WAVE_DELAY)
+		local delay = GameConfig.WAVE_DELAY or 5
+		if delay > 3 then
+			task.wait(delay - 3)
+		end
+		
+		-- Décompte visible
+		for i = 3, 1, -1 do
+			ShowNotification:FireAllClients("Spawns dans " .. i .. "...", "#FF5555", 1)
+			task.wait(1)
+		end
 
 		-- Mettre à jour les leaderstats
 		for _, player in ipairs(Players:GetPlayers()) do
@@ -420,7 +448,12 @@ end
 if #Players:GetPlayers() == 0 then
 	Players.PlayerAdded:Wait()
 end
-task.wait(3) -- Délai pour laisser le temps au lobby
+
+-- Intermission de 15 secondes au tout début pour le choix de classe
+for i = 15, 1, -1 do
+	ShowNotification:FireAllClients("Début de partie dans " .. i .. "...", "#FFFF00", 1)
+	task.wait(1)
+end
 
 -- Détecter la mort des joueurs
 Players.PlayerAdded:Connect(function(player)

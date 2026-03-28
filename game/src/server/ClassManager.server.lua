@@ -36,7 +36,7 @@ local function applyClassStats(player, className)
 		if humanoid then
 			humanoid.MaxHealth = classData.maxHp
 			humanoid.Health = classData.maxHp
-			humanoid.WalkSpeed = 16 * classData.speedMult
+			humanoid.WalkSpeed = 17.6 * classData.speedMult
 		end
 	end
 
@@ -94,7 +94,7 @@ local function setupDamageReduction(player)
 			if classData then
 				humanoid.MaxHealth = classData.maxHp
 				humanoid.Health = classData.maxHp
-				humanoid.WalkSpeed = 16 * classData.speedMult
+				humanoid.WalkSpeed = 17.6 * classData.speedMult
 			end
 		end
 	end)

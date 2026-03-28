@@ -13,6 +13,12 @@ local Constants = require(Shared:WaitForChild("Constants"))
 
 print("[ZombieWaves] Serveur en cours d'initialisation...")
 
+local PhysicsService = game:GetService("PhysicsService")
+pcall(function()
+	PhysicsService:RegisterCollisionGroup("Zombies")
+	PhysicsService:CollisionGroupSetCollidable("Zombies", "Zombies", false)
+end)
+
 -- Références aux managers (ils s'initialisent eux-mêmes via .server.lua)
 -- L'ordre d'exécution est géré par les dépendances dans chaque script
 
