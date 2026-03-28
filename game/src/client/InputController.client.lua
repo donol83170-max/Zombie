@@ -22,6 +22,11 @@ local isShooting = false
 local isReloading = false
 local lastShotTime = 0
 
+-- ViewModel (Arme FPS)
+local currentViewModel = nil
+local currentWeaponNameCache = ""
+local recoilOffset = CFrame.new(0, 0, 0)
+
 -- === FONCTIONS ===
 
 local function getWeaponData()
@@ -51,6 +56,60 @@ local function setAmmo(current, reserve)
 	end
 end
 
+local function updateViewModel(weaponName)
+	if currentWeaponNameCache == weaponName then return end
+
+	local weaponsFolder = ReplicatedStorage:FindFirstChild("Weapons")
+	local gunTemplate = weaponsFolder and weaponsFolder:FindFirstChild(weaponName)
+
+	if not gunTemplate or not gunTemplate:IsA("Model") then
+		-- PISTOLET DE TEST (SI L'UTILISATEUR S'EST TROMPÉ)
+		currentWeaponNameCache = weaponName
+
+		if currentViewModel then currentViewModel:Destroy() end
+
+		currentViewModel = Instance.new("Model")
+		currentViewModel.Name = "DummyGun"
+
+		local part = Instance.new("Part")
+		part.Size = Vector3.new(0.4, 0.4, 2)
+		part.Color = Color3.fromRGB(255, 0, 0)
+		part.Material = Enum.Material.Neon
+		part.Anchored = true
+		part.CanCollide = false
+		part.Parent = currentViewModel
+		
+		currentViewModel.PrimaryPart = part
+		currentViewModel.Parent = workspace.CurrentCamera
+		print("[InputController] ALERTE: Modèle '" .. weaponName .. "' introuvable ou mal nommé ! Pistolet Laser de Triche équipé !")
+		return
+	end
+	
+	-- On verrouille le cache uniquement si on a trouvé la vraie arme
+	currentWeaponNameCache = weaponName
+
+	-- Détruire l'ancienne arme s'il y en avait une
+	if currentViewModel then
+		currentViewModel:Destroy()
+		currentViewModel = nil
+	end
+
+	currentViewModel = gunTemplate:Clone()
+	
+	-- Nettoyer les scripts parasites et fixer les collisions
+	for _, desc in ipairs(currentViewModel:GetDescendants()) do
+		if desc:IsA("Script") or desc:IsA("LocalScript") then
+			desc:Destroy()
+		elseif desc:IsA("BasePart") then
+			desc.Anchored = true
+			desc.CanCollide = false
+		end
+	end
+	
+	currentViewModel.Parent = workspace.CurrentCamera
+	print("[InputController] Arme FPS générée avec succès : " .. weaponName)
+end
+
 local function shoot()
 	local weaponData, weaponId = getWeaponData()
 	if not weaponData then return end
@@ -72,6 +131,10 @@ local function shoot()
 	-- Consommer une balle
 	currentAmmo -= 1
 	setAmmo(currentAmmo, reserveAmmo)
+
+	-- Animations de Tir !
+	-- Appliquer un effet de recul brut sur l'arme 3D (elle recule et se lève)
+	recoilOffset = CFrame.new(0, 0, 0.4) * CFrame.Angles(math.rad(8), 0, 0)
 
 	-- Raycast pour détecter les hits
 	local char = player.Character
@@ -209,10 +272,30 @@ UserInputService.InputBegan:Connect(function(input, processed)
 	end
 end)
 
--- Boucle de tir (pour les armes automatiques)
-RunService.Heartbeat:Connect(function()
+-- Boucle Principale
+RunService.RenderStepped:Connect(function(dt)
+	-- Gérer le tir automatique
 	if isShooting then
 		shoot()
+	end
+	
+	-- Mettre à jour l'arme tenue
+	local weaponData, weaponName = getWeaponData()
+	if weaponName then
+		updateViewModel(weaponName)
+	end
+	
+	-- Positionner visuellement l'arme devant la caméra
+	if currentViewModel then
+		-- Décalage de base : À droite (1.2), Plus bas (-1.2), Vers l'avant (-2.5)
+		-- Éloigné de la caméra pour éviter que les gros modèles passent derrière l'écran (Near Plane Clipping)
+		local baseOffset = CFrame.new(1.2, -1.2, -2.5) 
+		
+		-- Ramener le recul vers la position de base doucement (Lerp)
+		recoilOffset = recoilOffset:Lerp(CFrame.new(0, 0, 0), dt * 15)
+		
+		-- PivotTo déplace n'importe quel modèle parfaitement sans avoir besoin de PrimaryPart
+		currentViewModel:PivotTo(workspace.CurrentCamera.CFrame * baseOffset * recoilOffset)
 	end
 end)
 

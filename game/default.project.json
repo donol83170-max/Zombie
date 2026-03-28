@@ -24,6 +24,10 @@
       "Shared": {
         "$path": "src/shared"
       },
+      "Weapons": {
+        "$className": "Folder",
+        "$ignoreUnknownInstances": true
+      },
       "Events": {
         "$className": "Folder",
         "RequestBuyWallWeapon": { "$className": "RemoteEvent" },
