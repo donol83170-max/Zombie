@@ -84,6 +84,9 @@ local function createBossMinion(position)
 	for _, part in ipairs(minion:GetDescendants()) do
 		if part:IsA("BasePart") then
 			part.CollisionGroup = "Zombies"
+			part.Anchored = false
+		elseif part:IsA("Script") or part:IsA("LocalScript") then
+			part:Destroy()
 		end
 	end
 
@@ -180,6 +183,9 @@ local function spawnBoss(wave)
 	for _, part in ipairs(boss:GetDescendants()) do
 		if part:IsA("BasePart") then
 			part.CollisionGroup = "Zombies"
+			part.Anchored = false
+		elseif part:IsA("Script") or part:IsA("LocalScript") then
+			part:Destroy()
 		end
 	end
 	

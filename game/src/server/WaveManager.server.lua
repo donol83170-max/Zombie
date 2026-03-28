@@ -217,6 +217,9 @@ local function createZombieModel(zombieType, wave)
 	for _, part in ipairs(zombie:GetDescendants()) do
 		if part:IsA("BasePart") then
 			part.CollisionGroup = "Zombies"
+			part.Anchored = false
+		elseif part:IsA("Script") or part:IsA("LocalScript") then
+			part:Destroy()
 		end
 	end
 
@@ -352,9 +355,10 @@ local function spawnWave(wave)
 			local zombie = createZombieModel(zombieType, wave)
 
 			-- Choisir un point de spawn aléatoire
-			local spawnPoint = spawnPoints[math.random(1, #spawnPoints)]
+			local rng = Random.new()
+			local spawnPoint = spawnPoints[rng:NextInteger(1, #spawnPoints)]
 			local spawnPos = spawnPoint.Position + Vector3.new(
-				math.random(-5, 5), 3, math.random(-5, 5)
+				rng:NextNumber(-5, 5), 3, rng:NextNumber(-5, 5)
 			)
 			zombie:SetPrimaryPartCFrame(CFrame.new(spawnPos))
 			zombie.Parent = workspace
@@ -363,7 +367,7 @@ local function spawnWave(wave)
 			setupZombieAI(zombie)
 
 			-- Intervalle entre spawns
-			local interval = math.random() * 
+			local interval = rng:NextNumber() * 
 				(GameConfig.SPAWN_INTERVAL_MAX - GameConfig.SPAWN_INTERVAL_MIN) + 
 				GameConfig.SPAWN_INTERVAL_MIN
 			task.wait(interval)

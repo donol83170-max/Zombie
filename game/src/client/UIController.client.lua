@@ -18,17 +18,25 @@ local Constants = require(Shared:WaitForChild("Constants"))
 -- === SÉLECTION DE CLASSE (affichée au début) ===
 
 local function createClassSelectionUI()
+	local UserInputService = game:GetService("UserInputService")
+	UserInputService.MouseIconEnabled = true
+	player.CameraMode = Enum.CameraMode.Classic
+
 	local screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "ClassSelection"
 	screenGui.ResetOnSpawn = false
 	screenGui.Parent = playerGui
 
-	-- Fond semi-transparent
-	local bg = Instance.new("Frame")
+	-- Fond semi-transparent (TextButton pour supporter la propriété Modal)
+	local bg = Instance.new("TextButton")
 	bg.Name = "Background"
+	bg.Text = ""
+	bg.AutoButtonColor = false
 	bg.Size = UDim2.new(1, 0, 1, 0)
 	bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 	bg.BackgroundTransparency = 0.4
+	bg.Active = true
+	bg.Modal = true -- Fait apparaître la souris même en FPS !
 	bg.Parent = screenGui
 
 	-- Titre
@@ -113,6 +121,15 @@ local function createClassSelectionUI()
 		-- Click
 		card.MouseButton1Click:Connect(function()
 			Events:WaitForChild("RequestSelectClass"):FireServer(className)
+			
+			-- Désactiver le Modal pour refermer la souris
+			bg.Modal = false
+			
+			-- Cacher le curseur de la souris pour le gameplay FPS
+			local UserInputService = game:GetService("UserInputService")
+			UserInputService.MouseIconEnabled = false
+			player.CameraMode = Enum.CameraMode.LockFirstPerson
+			
 			-- Fermer l'UI
 			TweenService:Create(bg, TweenInfo.new(0.3), {
 				BackgroundTransparency = 1
@@ -156,21 +173,8 @@ end
 
 -- === SHOW CLASS SELECTION AU SPAWN ===
 
--- Créer l'UI de sélection au premier spawn
-local firstSpawn = true
-player.CharacterAdded:Connect(function()
-	if firstSpawn then
-		firstSpawn = false
-		task.wait(1)
-		createClassSelectionUI()
-	end
-end)
-
--- Si le personnage existe déjà
-if player.Character then
-	task.wait(1)
-	createClassSelectionUI()
-end
+print("[UIController] Affichage instantané du menu à l'écran !")
+createClassSelectionUI()
 
 -- === ÉCOUTER LES BONUS ===
 
