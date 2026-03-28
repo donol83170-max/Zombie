@@ -1,0 +1,90 @@
+{
+  "name": "ZombieWaves",
+  "tree": {
+    "$className": "DataModel",
+
+    "ServerScriptService": {
+      "$className": "ServerScriptService",
+      "$path": "src/server"
+    },
+
+    "StarterPlayer": {
+      "$className": "StarterPlayer",
+      "StarterPlayerScripts": {
+        "$className": "StarterPlayerScripts",
+        "$path": "src/client"
+      }
+    },
+
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+      "Shared": {
+        "$path": "src/shared"
+      },
+      "Events": {
+        "$className": "Folder",
+        "RequestBuyWallWeapon": { "$className": "RemoteEvent" },
+        "RequestBuyDoor": { "$className": "RemoteEvent" },
+        "RequestBuyShopItem": { "$className": "RemoteEvent" },
+        "RequestSelectClass": { "$className": "RemoteEvent" },
+        "RequestVoteHardcore": { "$className": "RemoteEvent" },
+        "UpdateMoney": { "$className": "RemoteEvent" },
+        "UpdateWave": { "$className": "RemoteEvent" },
+        "UpdateHealth": { "$className": "RemoteEvent" },
+        "UpdateAmmo": { "$className": "RemoteEvent" },
+        "ShowNotification": { "$className": "RemoteEvent" },
+        "WaveCompleted": { "$className": "RemoteEvent" },
+        "BossSpawned": { "$className": "RemoteEvent" },
+        "BossHealthUpdate": { "$className": "RemoteEvent" },
+        "GameOver": { "$className": "RemoteEvent" },
+        "ClassSelected": { "$className": "RemoteEvent" },
+        "BonusActivated": { "$className": "RemoteEvent" },
+        "ZombieDied": { "$className": "RemoteEvent" },
+        "PlayerDied": { "$className": "RemoteEvent" },
+        "DoorOpened": { "$className": "RemoteEvent" },
+        "GameStarted": { "$className": "RemoteEvent" }
+      }
+    },
+
+    "StarterGui": {
+      "$className": "StarterGui",
+      "$path": "src/gui"
+    },
+
+    "Workspace": {
+      "$className": "Workspace",
+      "SpawnPoints": {
+        "$className": "Folder"
+      },
+      "ZombieSpawns": {
+        "$className": "Folder"
+      },
+      "WallBuys": {
+        "$className": "Folder"
+      },
+      "Doors": {
+        "$className": "Folder"
+      },
+      "Zones": {
+        "$className": "Folder"
+      }
+    },
+
+    "ServerStorage": {
+      "$className": "ServerStorage",
+      "ZombieTemplates": {
+        "$className": "Folder"
+      },
+      "WeaponTemplates": {
+        "$className": "Folder"
+      }
+    },
+
+    "SoundService": {
+      "$className": "SoundService",
+      "$properties": {
+        "RespectFilteringEnabled": true
+      }
+    }
+  }
+}
