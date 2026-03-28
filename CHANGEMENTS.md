@@ -22,3 +22,10 @@ Ce fichier liste toutes les améliorations de confort de jeu et de débuggage ap
 ### 🖥️ Interace / HUD
 - **Décompte Lobby (15s)** : Le jeu ne démarre plus la Manche 1 instantanément. Un décompte visuel de 15 secondes au milieu de l'écran laisse à tous les joueurs le temps de choisir leur classe.
 - **Effet de Sang (Damage Flash)** : L'écran flashe momentanément en rouge transparent avec une animation fluide dès qu'un joueur subit des dégâts.
+
+### 🗓️ Mise à jour 28/03 (Soirée)
+- **Menu Classe Fixé** : Affichage instantané du menu au lancement du jeu pour contrer les bugs de chargement Roblox (`Race Condition`).
+- **Souris Intelligente (Modal)** : Le pointeur de la souris se débloque automatiquement pendant la sélection, puis disparaît et verrouille le joueur en FPS une fois la partie lancée.
+- **Nettoyage Automatique** : Les vieux scripts Roblox parasites de la Toolbox intégrés dans les modèles de zombies sont maintenant systématiquement purgés pour ne pas faire crasher le serveur.
+- **Vent & Herbe** : Activation du `GlobalWind` pour animer physiquement et aléatoirement l'herbe du Terrain 3D de Roblox.
+- **Répartition Zombies Parfaite** : Application de l'algorithme `Fisher-Yates` avec le nouveau `Random.new()` de Roblox. Le spawn des hordes assure une distribution chronologique mathématiquement parfaite sur l'ensemble des plateformes créées (plus de zombies empilés sur une seule plateforme).
