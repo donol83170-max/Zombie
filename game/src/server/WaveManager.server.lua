@@ -89,6 +89,20 @@ local function getZombieSpawnPoints()
 		children = spawns:GetChildren()
 	end
 	
+	-- Forcer tous les points de spawn à être invisibles en jeu au cas où
+	for _, spawnPoint in ipairs(children) do
+		if spawnPoint:IsA("BasePart") then
+			spawnPoint.Transparency = 1
+			spawnPoint.CanCollide = false
+			-- S'il y a un Decal (logo de SpawnLocation), on le cache aussi
+			for _, child in ipairs(spawnPoint:GetChildren()) do
+				if child:IsA("Decal") or child:IsA("Texture") then
+					child.Transparency = 1
+				end
+			end
+		end
+	end
+	
 	return children
 end
 
@@ -346,6 +360,17 @@ local function spawnWave(wave)
 		return
 	end
 
+	-- Mélanger les points de spawn aléatoirement au début de la manche
+	local rng = Random.new()
+	local shuffledSpawns = {}
+	for i, spawn in ipairs(spawnPoints) do
+		shuffledSpawns[i] = spawn
+	end
+	for i = #shuffledSpawns, 2, -1 do
+		local j = rng:NextInteger(1, i)
+		shuffledSpawns[i], shuffledSpawns[j] = shuffledSpawns[j], shuffledSpawns[i]
+	end
+
 	-- Spawn progressif
 	task.spawn(function()
 		for i = 1, totalZombies do
@@ -354,11 +379,12 @@ local function spawnWave(wave)
 			local zombieType = chooseZombieType(wave)
 			local zombie = createZombieModel(zombieType, wave)
 
-			-- Choisir un point de spawn aléatoire
-			local rng = Random.new()
-			local spawnPoint = spawnPoints[rng:NextInteger(1, #spawnPoints)]
+			-- Distribution mathématique parfaite : 1 zombie par spawn, puis on boucle
+			local spawnIndex = ((i - 1) % #shuffledSpawns) + 1
+			local spawnPoint = shuffledSpawns[spawnIndex]
+			
 			local spawnPos = spawnPoint.Position + Vector3.new(
-				rng:NextNumber(-5, 5), 3, rng:NextNumber(-5, 5)
+				rng:NextNumber(-3, 3), 3, rng:NextNumber(-3, 3)
 			)
 			zombie:SetPrimaryPartCFrame(CFrame.new(spawnPos))
 			zombie.Parent = workspace

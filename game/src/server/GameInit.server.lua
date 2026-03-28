@@ -13,6 +13,9 @@ local Constants = require(Shared:WaitForChild("Constants"))
 
 print("[ZombieWaves] Serveur en cours d'initialisation...")
 
+-- Animer l'herbe du terrain (si Decoration = true)
+workspace.GlobalWind = Vector3.new(15, 0, 10)
+
 local PhysicsService = game:GetService("PhysicsService")
 pcall(function()
 	PhysicsService:RegisterCollisionGroup("Zombies")
