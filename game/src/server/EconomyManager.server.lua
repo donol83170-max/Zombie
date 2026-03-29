@@ -47,6 +47,8 @@ function EconomyManager.addMoney(player, amount)
 
 	local finalAmount = math.floor(amount * moneyMult)
 	leaderstats.Money.Value += finalAmount
+	
+	print(string.format("[EconomyManager] $$$ ARGENT AJOUTÉ à %s : +$%d (Total: %d) $$$", player.Name, finalAmount, leaderstats.Money.Value))
 
 	-- Notifier le client
 	UpdateMoney:FireClient(player, leaderstats.Money.Value)
@@ -120,9 +122,14 @@ end)
 -- Serveur fait autorité sur les dégâts et récompense à chaque impact
 DamageZombie.OnServerEvent:Connect(function(player, zombieModel, isHeadshot, weaponName)
 	if not zombieModel or not zombieModel:IsA("Model") then return end
-	local humanoid = zombieModel:FindFirstChild("Humanoid")
+	
+	-- Recherche ultra-robuste de l'Humanoid (même s'il est caché dans un sous-modèle)
+	local humanoid = zombieModel:FindFirstChildOfClass("Humanoid") or zombieModel:FindFirstChild("Humanoid", true)
+	
 	if not humanoid or humanoid.Health <= 0 then return end
 	
+	print(string.format("[EconomyManager] HIT VALIDÉ ! Zombie: %s | Vie: %.1f", zombieModel.Name, humanoid.Health))
+
 	local WeaponConfig = require(Shared:WaitForChild("WeaponConfig"))
 	local wData = WeaponConfig.Weapons[weaponName]
 	if not wData then return end

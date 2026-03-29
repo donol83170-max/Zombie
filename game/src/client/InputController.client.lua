@@ -26,6 +26,7 @@ local lastShotTime = 0
 local currentViewModel = nil
 local currentWeaponNameCache = ""
 local recoilOffset = CFrame.new(0, 0, 0)
+local swayOffset = CFrame.new(0, 0, 0)
 
 -- Mouvement (Sprint)
 local sprintTimer = 0
@@ -100,14 +101,16 @@ local function updateViewModel(weaponName)
 
 	currentViewModel = gunTemplate:Clone()
 	
-	-- Nettoyer les scripts parasites et fixer les collisions
+	-- Nettoyer les scripts parasites (mais on GARDE les Sons !)
 	for _, desc in ipairs(currentViewModel:GetDescendants()) do
-		if desc:IsA("Script") or desc:IsA("LocalScript") or desc:IsA("Sound") then
+		if desc:IsA("Script") or desc:IsA("LocalScript") then
 			desc:Destroy()
 		elseif desc:IsA("BasePart") then
 			desc.Anchored = true
 			desc.CanCollide = false
-		elseif desc:IsA("ParticleEmitter") or desc:IsA("Light") then
+		elseif desc:IsA("ParticleEmitter") then
+			desc.Rate = 0  -- Éteindre l'émission continue SANS bloquer Emit()
+		elseif desc:IsA("Light") then
 			desc.Enabled = false
 		end
 	end
@@ -124,7 +127,7 @@ local function shoot()
 	local currentAmmo, reserveAmmo = getCurrentAmmo()
 	if currentAmmo <= 0 then
 		-- Auto reload
-		reload()
+		task.spawn(reload)
 		return
 	end
 
@@ -162,36 +165,65 @@ local function shoot()
 	raycastParams.FilterDescendantsInstances = {char}
 
 	local result = workspace:Raycast(origin, direction, raycastParams)
+	
+	-- SI ON A TOUCHÉ QUELQUE CHOSE DE TRANSPARENT (Brouillard / VFX), ON ESSAIE DE PASSER À TRAVERS
+	if result and result.Instance and result.Instance.Transparency > 0.5 and not result.Instance:FindFirstAncestorOfClass("Model") then
+		local newParams = RaycastParams.new()
+		newParams.FilterType = Enum.RaycastFilterType.Exclude
+		newParams.FilterDescendantsInstances = {char, result.Instance}
+		result = workspace:Raycast(origin, direction, newParams)
+	end
 
-	-- EFFETS VISUELS DE LA TOOLBOX (Muzzle Flash, Flammes, etc.)
-	if currentViewModel then
-		for _, effect in ipairs(currentViewModel:GetDescendants()) do
-			if effect:IsA("ParticleEmitter") then
-				effect:Emit(15) -- Fait cracher les flammes de l'arme
-			elseif effect:IsA("Light") then
-				-- Fait flasher la lumière du canon
-				task.spawn(function()
-					effect.Enabled = true
-					task.wait(0.05)
-					effect.Enabled = false
-				end)
+	-- EFFETS VISUELS (thread isolé = ne peut PAS bloquer les dégâts)
+	task.spawn(function()
+		if currentViewModel then
+			for _, desc in ipairs(currentViewModel:GetDescendants()) do
+				if desc:IsA("ParticleEmitter") then
+					pcall(function() desc:Emit(5) end)
+				elseif desc:IsA("PointLight") or desc:IsA("SurfaceLight") then
+					pcall(function()
+						desc.Enabled = true
+						task.wait(0.06)
+						desc.Enabled = false
+					end)
+				end
 			end
 		end
-	end
+	end)
 	
 	if result then
 		local hit = result.Instance
-		-- Vérifier si on a touché un zombie
-		local model = hit:FindFirstAncestorOfClass("Model")
-		if model and model.Name:sub(1, 6) == "Enemy_" then
-			local humanoid = model:FindFirstChildOfClass("Humanoid")
+		print("[InputController] Raycast a touché :", hit.Name, "Parent:", hit.Parent and hit.Parent.Name or "None")
+		
+		-- Trouver le MODÈLE RACINE du zombie (nom commençant par Enemy_)
+		-- On remonte la hiérarchie de façon sécurisée
+		local zombieRoot = nil
+		local current = hit
+		for _ = 1, 10 do -- Maximum 10 niveaux de remontée
+			if current == nil or current == workspace then break end
+			if current:IsA("Model") and current.Name:sub(1, 6) == "Enemy_" then
+				zombieRoot = current
+				break
+			end
+			current = current.Parent
+		end
+
+		if zombieRoot then
+			local humanoid = zombieRoot:FindFirstChildOfClass("Humanoid") or zombieRoot:FindFirstChild("Humanoid", true)
 			if humanoid and humanoid.Health > 0 then
-				-- Appliquer les dégâts côté client pour le feedback visuel (optionnel)
-				-- mais déléguer la vraie logique au Serveur !
+				print("[InputController] ZOMBIE DÉTECTÉ :", zombieRoot.Name)
 				local isHeadshot = (hit.Name == "Head")
 				
+				-- Petit son de hit (Hitmarker)
+				local hm = Instance.new("Sound")
+				hm.SoundId = "rbxassetid://160432334"
+				hm.Volume = 0.5
+				hm.Parent = player:WaitForChild("PlayerGui")
+				hm:Play()
+				task.delay(1, function() hm:Destroy() end)
+				
 				-- Le Serveur gère la soustraction des PV et l'attribution de l'argent ($10 ou $50)
-				Events.DamageZombie:FireServer(model, isHeadshot, weaponId)
+				Events.DamageZombie:FireServer(zombieRoot, isHeadshot, weaponId)
 
 				-- Feedback visuel : flash rouge sur le zombie
 				local originalColor = hit.Color
@@ -224,25 +256,32 @@ local function shoot()
 	UpdateAmmo:FireServer(currentAmmo, reserveAmmo, weaponData.displayName)
 
 	-- Feedback local
-	local ammoFrame = player.PlayerGui:FindFirstChild("HUD")
-	if ammoFrame then
-		local ammoLabel = ammoFrame:FindFirstChild("AmmoFrame")
-		if ammoLabel then
-			local al = ammoLabel:FindFirstChild("AmmoLabel")
+	local ammoModel = player.PlayerGui:FindFirstChild("HUD")
+	if ammoModel then
+		local hudFrame = ammoModel:FindFirstChild("AmmoFrame")
+		if hudFrame then
+			local al = hudFrame:FindFirstChild("AmmoLabel")
 			if al then al.Text = currentAmmo .. " / " .. reserveAmmo end
+			
+			local rh = hudFrame:FindFirstChild("ReloadHint")
+			if rh then
+				rh.Visible = (currentAmmo <= 0 and reserveAmmo > 0)
+			end
 		end
 	end
 end
 
 function reload()
+	print("[InputController] Touche R pressée. isReloading =", isReloading)
 	if isReloading then return end
 
 	local weaponData = getWeaponData()
-	if not weaponData then return end
+	if not weaponData then print("[InputController] ERREUR : Pas de weaponData !") return end
 
 	local currentAmmo, reserveAmmo = getCurrentAmmo()
-	if reserveAmmo <= 0 then return end
-	if currentAmmo >= weaponData.magSize then return end
+	print(string.format("[InputController] Rechargement évalué. Ammo: %d, Réserve: %d, MagSize: %d", currentAmmo, reserveAmmo, weaponData.magSize))
+	if reserveAmmo <= 0 then print("[InputController] Annulé : Plus de munitions en réserve.") return end
+	if currentAmmo >= weaponData.magSize then print("[InputController] Annulé : Chargeur déjà plein.") return end
 
 	isReloading = true
 
@@ -253,6 +292,9 @@ function reload()
 		if ammoFrame then
 			local al = ammoFrame:FindFirstChild("AmmoLabel")
 			if al then al.Text = "Rechargement..." end
+			
+			local rh = ammoFrame:FindFirstChild("ReloadHint")
+			if rh then rh.Visible = false end
 		end
 	end
 
@@ -271,6 +313,9 @@ function reload()
 		if ammoFrame then
 			local al = ammoFrame:FindFirstChild("AmmoLabel")
 			if al then al.Text = currentAmmo .. " / " .. reserveAmmo end
+			
+			local rh = ammoFrame:FindFirstChild("ReloadHint")
+			if rh then rh.Visible = false end
 		end
 	end
 
@@ -290,9 +335,8 @@ end)
 
 -- R : recharger
 UserInputService.InputBegan:Connect(function(input, processed)
-	if processed then return end
 	if input.KeyCode == Enum.KeyCode.R then
-		reload()
+		task.spawn(reload)
 	end
 end)
 
@@ -308,18 +352,22 @@ RunService.RenderStepped:Connect(function(dt)
 	if char then
 		local humanoid = char:FindFirstChildOfClass("Humanoid")
 		if humanoid then
+			-- Récupérer la vitesse de base de la classe
+			local classConfig = require(Shared:WaitForChild("ClassConfig"))
+			local sessionData = player:FindFirstChild("SessionData")
+			local className = sessionData and sessionData:FindFirstChild("Class") and sessionData.Class.Value or "Soldier"
+			local classData = classConfig.Classes[className]
+			local baseSpeed = (classData and classData.speedMult or 1.0) * 16 -- 16 est le défaut Roblox
+
 			-- Si le joueur avance
 			if humanoid.MoveDirection.Magnitude > 0.1 then
 				sprintTimer = math.min(sprintTimer + dt, 3.0) -- 3 secondes max
 				local sprintMultiplier = 1.0 + (0.5 * (sprintTimer / 3.0)) -- De 1x à 1.5x (+50%)
-				humanoid.WalkSpeed = currentBaseSpeed * sprintMultiplier
+				humanoid.WalkSpeed = baseSpeed * sprintMultiplier
 			else
 				-- Dès qu'il s'arrête, on réinitialise sa vitesse normale
-				if sprintTimer > 0 then
-					humanoid.WalkSpeed = currentBaseSpeed
-				end
+				humanoid.WalkSpeed = baseSpeed
 				sprintTimer = 0
-				currentBaseSpeed = humanoid.WalkSpeed -- On enregistre sa vitesse de repos dictée par le serveur (Classe)
 			end
 		end
 	end
@@ -344,11 +392,15 @@ RunService.RenderStepped:Connect(function(dt)
 			math.rad(offsetRot.Z)
 		)
 		
-		-- Ramener le recul vers la position de base doucement (Lerp)
+		-- Appliquer le recul
 		recoilOffset = recoilOffset:Lerp(CFrame.new(0, 0, 0), dt * 15)
 		
+		-- Ajouter un léger balancement (Sway)
+		local mouseDelta = UserInputService:GetMouseDelta()
+		swayOffset = swayOffset:Lerp(CFrame.new(-mouseDelta.X/500, mouseDelta.Y/500, 0), dt * 5)
+
 		-- PivotTo déplace le modèle physiquement à chaque image
-		currentViewModel:PivotTo(workspace.CurrentCamera.CFrame * baseOffset * recoilOffset)
+		currentViewModel:PivotTo(workspace.CurrentCamera.CFrame * baseOffset * swayOffset * recoilOffset)
 	end
 end)
 

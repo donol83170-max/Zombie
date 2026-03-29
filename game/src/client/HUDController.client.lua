@@ -121,6 +121,19 @@ local function createHUD()
 	ammoLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 	ammoLabel.Parent = ammoFrame
 
+	-- Hint de rechargement
+	local reloadHint = Instance.new("TextLabel")
+	reloadHint.Name = "ReloadHint"
+	reloadHint.Size = UDim2.new(1.5, 0, 0.4, 0)
+	reloadHint.Position = UDim2.new(-0.25, 0, -0.4, 0)
+	reloadHint.BackgroundTransparency = 1
+	reloadHint.Text = "Appuyer sur R pour recharger"
+	reloadHint.TextColor3 = Color3.fromRGB(255, 50, 50) -- Rouge alerte
+	reloadHint.Font = Enum.Font.GothamBold
+	reloadHint.TextSize = 14
+	reloadHint.Visible = false
+	reloadHint.Parent = ammoFrame
+
 	-- === NOTIFICATION (centre) ===
 	local notifLabel = Instance.new("TextLabel")
 	notifLabel.Name = "NotifLabel"
