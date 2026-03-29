@@ -43,6 +43,15 @@
 - Vie evolutive selon la manche (config dans `ZombieConfig.lua`)
 - Types : Basic (100 HP), Rapide (50 HP), Tank (500 HP), Explosif (75 HP), Boss (2000 HP)
 
+### Wall Buy (Achat d'armes aux murs) -- Style COD
+- **Placement libre** : place n'importe quel modele ou objet dans le dossier `WallBuys` de Workspace
+- **Nommage simple** : renomme l'objet en `WallBuy_NomArme` (ex : `WallBuy_Pistol`, `WallBuy_AK47`)
+- Le script detecte automatiquement l'objet et ajoute le **ProximityPrompt** d'achat + le **texte** (nom + prix)
+- Fonctionne avec des **Parts** et des **Models** (cherche la PrimaryPart ou la premiere Part)
+- Detection dynamique : les wall buys ajoutes en cours de jeu sont detectes aussi
+- Nettoyage automatique des espaces dans les noms
+- **Astuce visuel** : ajouter un **Highlight** sur le modele (OutlineColor blanc, FillTransparency 1) pour un effet contour lumineux style COD
+
 ### Portail Interactif
 - **Touche E** pour ouvrir/fermer le portail
 - Les deux battants s'ouvrent avec une animation fluide (TweenService, 1.5s)
@@ -77,7 +86,7 @@
 | `src/server/EconomyManager.server.lua` | Degats + argent (serveur autoritaire) |
 | `src/server/GameInit.server.lua` | Init joueur : armes, slots, munitions |
 | `src/server/ShopManager.server.lua` | Boutique : armes, consommables |
-| `src/server/WallBuyManager.server.lua` | Achat d'armes aux murs |
+| `src/server/WallBuyManager.server.lua` | Achat d'armes aux murs (detection auto des modeles) |
 | `src/server/GateManager.server.lua` | Portails interactifs (ouverture/fermeture) |
 | `src/client/HUDController.client.lua` | HUD : vie, argent, manche, munitions |
 | `src/shared/WeaponConfig.lua` | Config armes (degats, cadence, prix, rotation, offset) |
@@ -110,6 +119,25 @@ Pour que ton frere puisse travailler sur le jeu, il doit suivre ces etapes :
 5. **Travailler ensemble** :
    - Quand il change un script, il doit faire un `git commit` et `git push`.
    - Toi, tu devras faire un `git pull` pour voir ses changements, et vice-versa !
+
+---
+
+## Comment ajouter un Wall Buy sur la map
+
+1. Dans Roblox Studio, ouvre le dossier `WallBuys` dans Workspace (il est cree automatiquement)
+2. Place le modele ou objet de ton choix dans ce dossier
+3. Renomme-le en `WallBuy_NomArme` :
+   - `WallBuy_Pistol` (gratuit)
+   - `WallBuy_SMG` (800$)
+   - `WallBuy_Shotgun` (1500$)
+   - `WallBuy_AK47` (2500$)
+   - `WallBuy_Sniper` (4000$)
+   - `WallBuy_Flamethrower` (6000$)
+4. Anchor toutes les Parts du modele (Anchored = true)
+5. (Optionnel) Ajoute un **Highlight** pour un effet contour lumineux :
+   - Insert Object > Highlight
+   - OutlineColor = Blanc
+   - FillTransparency = 1
 
 ---
 

@@ -1,6 +1,7 @@
 -- WallBuyManager.server.lua
 -- Système d'achat d'armes aux murs via ProximityPrompt
--- Système #3 (Critique)
+-- Place un objet dans le dossier "WallBuys" de Workspace et nomme-le "WallBuy_NomArme"
+-- Exemple : WallBuy_Pistol, WallBuy_SMG, WallBuy_AK47, WallBuy_Shotgun, WallBuy_Sniper, WallBuy_Flamethrower
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -17,32 +18,31 @@ local UpdateMoney = Events:WaitForChild("UpdateMoney")
 -- Attendre que EconomyManager soit disponible
 task.wait(1)
 
--- === CRÉATION DES WALL BUYS ===
+-- === SETUP D'UN WALL BUY ===
 
-local function createWallBuy(weaponId, position, parent)
+local function setupWallBuy(object, weaponId)
 	local weaponData = WeaponConfig.Weapons[weaponId]
 	if not weaponData then
-		warn("[WallBuy] Arme introuvable: " .. weaponId)
+		warn("[WallBuy] Arme introuvable: " .. weaponId .. " (objet: " .. object.Name .. ")")
 		return
 	end
 
-	-- Créer le panneau mural
-	local part = Instance.new("Part")
-	part.Name = "WallBuy_" .. weaponId
-	part.Size = Vector3.new(4, 3, 0.5)
-	part.Anchored = true
-	part.CanCollide = true
-	part.Position = position
-	part.Color = Color3.fromRGB(60, 60, 60)
-	part.Material = Enum.Material.Metal
-	part.Parent = parent or workspace:FindFirstChild("WallBuys") or workspace
+	-- Trouver la Part principale (si c'est un Model, prendre la PrimaryPart ou la première Part)
+	local targetPart = object
+	if object:IsA("Model") then
+		targetPart = object.PrimaryPart or object:FindFirstChildWhichIsA("BasePart", true)
+		if not targetPart then
+			warn("[WallBuy] Aucune Part trouvée dans le modèle: " .. object.Name)
+			return
+		end
+	end
 
 	-- BillboardGui avec nom et prix
 	local billboard = Instance.new("BillboardGui")
 	billboard.Size = UDim2.new(6, 0, 3, 0)
-	billboard.StudsOffset = Vector3.new(0, 2, 0)
+	billboard.StudsOffset = Vector3.new(0, 3, 0)
 	billboard.AlwaysOnTop = false
-	billboard.Parent = part
+	billboard.Parent = targetPart
 
 	local nameLabel = Instance.new("TextLabel")
 	nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
@@ -76,11 +76,10 @@ local function createWallBuy(weaponId, position, parent)
 	prompt.ObjectText = weaponData.displayName .. " — $" .. weaponData.price
 	prompt.HoldDuration = 0.3
 	prompt.MaxActivationDistance = 8
-	prompt.Parent = part
+	prompt.Parent = targetPart
 
 	-- Gestion de l'achat
 	prompt.Triggered:Connect(function(player)
-		-- Vérifier les fonds
 		local economy = _G.EconomyManager
 		if not economy then
 			warn("[WallBuy] EconomyManager non disponible")
@@ -88,7 +87,6 @@ local function createWallBuy(weaponId, position, parent)
 		end
 
 		if weaponData.price == 0 or economy.canAfford(player, weaponData.price) then
-			-- Déduire l'argent
 			if weaponData.price > 0 then
 				local success = economy.removeMoney(player, weaponData.price)
 				if not success then
@@ -97,13 +95,11 @@ local function createWallBuy(weaponId, position, parent)
 				end
 			end
 
-			-- Donner l'arme (et la sauvegarder comme arme primaire)
 			local sessionData = player:FindFirstChild("SessionData")
 			if sessionData then
 				sessionData.WeaponName.Value = weaponId
 				sessionData.CurrentAmmo.Value = weaponData.magSize
 				sessionData.ReserveAmmo.Value = weaponData.reserveAmmo
-				-- Sauvegarder comme arme primaire
 				if sessionData:FindFirstChild("PrimaryWeaponName") then
 					sessionData.PrimaryWeaponName.Value = weaponId
 				end
@@ -118,7 +114,6 @@ local function createWallBuy(weaponId, position, parent)
 				end
 			end
 
-			-- Notifier le client
 			UpdateAmmo:FireClient(player, weaponData.magSize, weaponData.reserveAmmo, weaponData.displayName)
 			ShowNotification:FireClient(player, "🔫 " .. weaponData.displayName .. " acheté !", "#00FF00", 2)
 
@@ -128,27 +123,38 @@ local function createWallBuy(weaponId, position, parent)
 		end
 	end)
 
-	return part
+	print("[WallBuy] Setup OK : " .. weaponData.displayName .. " sur " .. object.Name)
 end
 
 -- === INITIALISATION ===
 
--- Créer les wall buys par défaut si le dossier est vide
 local wallBuysFolder = workspace:FindFirstChild("WallBuys")
-if wallBuysFolder and #wallBuysFolder:GetChildren() == 0 then
-	-- Zone 1
-	createWallBuy("Pistol", Vector3.new(10, 3, 0), wallBuysFolder)
-	createWallBuy("Shotgun", Vector3.new(20, 3, 0), wallBuysFolder)
-
-	-- Zone 2
-	createWallBuy("SMG", Vector3.new(10, 3, -50), wallBuysFolder)
-	createWallBuy("AK47", Vector3.new(20, 3, -50), wallBuysFolder)
-
-	-- Zone 3
-	createWallBuy("Sniper", Vector3.new(10, 3, -100), wallBuysFolder)
-	createWallBuy("Flamethrower", Vector3.new(20, 3, -100), wallBuysFolder)
-
-	print("[WallBuyManager] Wall buys par défaut créés")
+if not wallBuysFolder then
+	wallBuysFolder = Instance.new("Folder")
+	wallBuysFolder.Name = "WallBuys"
+	wallBuysFolder.Parent = workspace
+	print("[WallBuyManager] Dossier WallBuys créé")
 end
 
-print("[WallBuyManager] Initialisé !")
+-- Scanner tous les objets existants dans le dossier
+for _, child in ipairs(wallBuysFolder:GetChildren()) do
+	local weaponId = child.Name:match("^WallBuy_(.+)$")
+	if weaponId then
+		weaponId = weaponId:gsub("%s+", "") -- Nettoyer les espaces
+		setupWallBuy(child, weaponId)
+	else
+		warn("[WallBuy] Nom invalide: " .. child.Name .. " (doit être WallBuy_NomArme)")
+	end
+end
+
+-- Détecter les wall buys ajoutés après le démarrage
+wallBuysFolder.ChildAdded:Connect(function(child)
+	task.wait(0.1) -- Laisser le temps au modèle de se charger
+	local weaponId = child.Name:match("^WallBuy_(.+)$")
+	if weaponId then
+		weaponId = weaponId:gsub("%s+", "") -- Nettoyer les espaces
+		setupWallBuy(child, weaponId)
+	end
+end)
+
+print("[WallBuyManager] Initialisé ! (" .. #wallBuysFolder:GetChildren() .. " wall buys détectés)")
