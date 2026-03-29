@@ -80,7 +80,7 @@ local function updateViewModel(weaponName)
 		part.Parent = currentViewModel
 		
 		currentViewModel.PrimaryPart = part
-		currentViewModel.Parent = workspace.CurrentCamera
+		currentViewModel.Parent = workspace -- Attacher au Workspace pour empêcher Roblox de rendre la caméra invisible !
 		print("[InputController] ALERTE: Modèle '" .. weaponName .. "' introuvable ou mal nommé ! Pistolet Laser de Triche équipé !")
 		return
 	end
@@ -106,7 +106,7 @@ local function updateViewModel(weaponName)
 		end
 	end
 	
-	currentViewModel.Parent = workspace.CurrentCamera
+	currentViewModel.Parent = workspace
 	print("[InputController] Arme FPS générée avec succès : " .. weaponName)
 end
 
@@ -286,15 +286,23 @@ RunService.RenderStepped:Connect(function(dt)
 	end
 	
 	-- Positionner visuellement l'arme devant la caméra
-	if currentViewModel then
-		-- Décalage de base : À droite (1.2), Plus bas (-1.2), Vers l'avant (-2.5)
-		-- Éloigné de la caméra pour éviter que les gros modèles passent derrière l'écran (Near Plane Clipping)
-		local baseOffset = CFrame.new(1.2, -1.2, -2.5) 
+	if currentViewModel and weaponData then
+		
+		-- Récupérer le réglage sur mesure de l'arme
+		local offsetPos = weaponData.fpsOffset or Vector3.new(0.5, -0.5, -2.0)
+		local offsetRot = weaponData.fpsRotation or Vector3.new(0, 0, 0)
+		
+		-- Créer le CFrame parfait (Position + Rotation)
+		local baseOffset = CFrame.new(offsetPos) * CFrame.Angles(
+			math.rad(offsetRot.X), 
+			math.rad(offsetRot.Y), 
+			math.rad(offsetRot.Z)
+		)
 		
 		-- Ramener le recul vers la position de base doucement (Lerp)
 		recoilOffset = recoilOffset:Lerp(CFrame.new(0, 0, 0), dt * 15)
 		
-		-- PivotTo déplace n'importe quel modèle parfaitement sans avoir besoin de PrimaryPart
+		-- PivotTo déplace le modèle physiquement à chaque image
 		currentViewModel:PivotTo(workspace.CurrentCamera.CFrame * baseOffset * recoilOffset)
 	end
 end)

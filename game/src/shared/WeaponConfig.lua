@@ -16,6 +16,10 @@ WeaponConfig.Weapons = {
         fireMode = "semi",        -- semi / auto / burst
         range = 100,
         headshotMult = 2.0,
+        
+        -- Configuration Visuelle FPS
+        fpsOffset = Vector3.new(0.5, -1, -2.0),
+        fpsRotation = Vector3.new(0, -180, 0), -- Tourne l'arme de 90 degrés pour la mettre droite
     },
     SMG = {
         displayName = "SMG",
