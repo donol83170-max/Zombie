@@ -83,6 +83,28 @@ Players.PlayerAdded:Connect(function(player)
 	reserveAmmo.Value = 48
 	reserveAmmo.Parent = sessionData
 
+	-- Arme primaire sauvegardée (pour le switch avec le couteau)
+	local primaryWeapon = Instance.new("StringValue")
+	primaryWeapon.Name = "PrimaryWeaponName"
+	primaryWeapon.Value = "Pistol"
+	primaryWeapon.Parent = sessionData
+
+	local primaryAmmo = Instance.new("IntValue")
+	primaryAmmo.Name = "PrimaryAmmo"
+	primaryAmmo.Value = 12
+	primaryAmmo.Parent = sessionData
+
+	local primaryReserve = Instance.new("IntValue")
+	primaryReserve.Name = "PrimaryReserve"
+	primaryReserve.Value = 48
+	primaryReserve.Parent = sessionData
+
+	-- Slot actif (1 = primaire, 2 = couteau)
+	local activeSlot = Instance.new("IntValue")
+	activeSlot.Name = "ActiveSlot"
+	activeSlot.Value = 1
+	activeSlot.Parent = sessionData
+
 	print("[ZombieWaves] Joueur connecté: " .. player.Name)
 end)
 

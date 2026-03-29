@@ -5,6 +5,26 @@
 local WeaponConfig = {}
 
 WeaponConfig.Weapons = {
+    KNIFE = {
+        displayName = "Couteau",
+        price = 0,
+        damage = 35,
+        rpm = 120,                -- 2 coups par seconde
+        magSize = 0,              -- pas de munitions
+        reserveAmmo = 0,
+        reloadTime = 0,
+        fireMode = "melee",
+        range = 8,                -- courte portée (mêlée)
+        headshotMult = 1.0,
+
+        -- Configuration Visuelle FPS (rotation sur les bras)
+        fpsOffset = Vector3.new(0.6, -0.5, -1.5),
+        fpsRotation = Vector3.new(-20, 75, 90),
+        gripOffset = Vector3.new(0, 0.15, 0.3),  -- Décalé vers ta gauche
+
+        -- Sons
+        fireSound = "rbxassetid://553463081",
+    },
     Pistol = {
         displayName = "Pistolet",
         price = 0,                -- gratuit (arme de départ)
@@ -16,10 +36,11 @@ WeaponConfig.Weapons = {
         fireMode = "semi",        -- semi / auto / burst
         range = 100,
         headshotMult = 2.0,
-        
+
         -- Configuration Visuelle FPS
         fpsOffset = Vector3.new(0.5, -1, -2.0),
-        fpsRotation = Vector3.new(0, -180, 0), -- Tourne l'arme de 90 degrés pour la mettre droite
+        fpsRotation = Vector3.new(0, -90, 0), -- Orientation sur les bras
+        gripOffset = Vector3.new(0, 0, -0.3), -- Décalé vers ta droite
         
         -- Sons
         fireSound = "rbxassetid://104267069535370", -- Son de tir classique de Roblox

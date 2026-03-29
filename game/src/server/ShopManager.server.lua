@@ -51,12 +51,25 @@ local function buyWeapon(player, weaponId)
 		economy.removeMoney(player, weaponData.price)
 	end
 
-	-- Donner l'arme
+	-- Donner l'arme (et la sauvegarder comme arme primaire)
 	local sessionData = player:FindFirstChild("SessionData")
 	if sessionData then
 		sessionData.WeaponName.Value = weaponId
 		sessionData.CurrentAmmo.Value = weaponData.magSize
 		sessionData.ReserveAmmo.Value = weaponData.reserveAmmo
+		-- Sauvegarder comme arme primaire
+		if sessionData:FindFirstChild("PrimaryWeaponName") then
+			sessionData.PrimaryWeaponName.Value = weaponId
+		end
+		if sessionData:FindFirstChild("PrimaryAmmo") then
+			sessionData.PrimaryAmmo.Value = weaponData.magSize
+		end
+		if sessionData:FindFirstChild("PrimaryReserve") then
+			sessionData.PrimaryReserve.Value = weaponData.reserveAmmo
+		end
+		if sessionData:FindFirstChild("ActiveSlot") then
+			sessionData.ActiveSlot.Value = 1
+		end
 	end
 
 	UpdateAmmo:FireClient(player, weaponData.magSize, weaponData.reserveAmmo, weaponData.displayName)
