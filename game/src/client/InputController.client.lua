@@ -27,6 +27,10 @@ local currentViewModel = nil
 local currentWeaponNameCache = ""
 local recoilOffset = CFrame.new(0, 0, 0)
 
+-- Mouvement (Sprint)
+local sprintTimer = 0
+local currentBaseSpeed = 17.6
+
 -- === FONCTIONS ===
 
 local function getWeaponData()
@@ -182,18 +186,12 @@ local function shoot()
 		if model and model.Name:sub(1, 6) == "Enemy_" then
 			local humanoid = model:FindFirstChildOfClass("Humanoid")
 			if humanoid and humanoid.Health > 0 then
-				-- Appliquer les dégâts côté client pour le feedback
-				-- (le serveur validera les dégâts réels)
+				-- Appliquer les dégâts côté client pour le feedback visuel (optionnel)
+				-- mais déléguer la vraie logique au Serveur !
+				local isHeadshot = (hit.Name == "Head")
 				
-				-- Multiplicateur headshot
-				local damage = weaponData.damage
-				if hit.Name == "Head" then
-					damage *= (weaponData.headshotMult or 1)
-				end
-
-				-- Appliquer les dégâts
-				-- (Dans une version production, c'est le serveur qui calcule)
-				humanoid:TakeDamage(damage)
+				-- Le Serveur gère la soustraction des PV et l'attribution de l'argent ($10 ou $50)
+				Events.DamageZombie:FireServer(model, isHeadshot, weaponId)
 
 				-- Feedback visuel : flash rouge sur le zombie
 				local originalColor = hit.Color
@@ -303,6 +301,27 @@ RunService.RenderStepped:Connect(function(dt)
 	-- Gérer le tir automatique
 	if isShooting then
 		shoot()
+	end
+	
+	-- Gérer le sprint (Crescendo d'élan)
+	local char = player.Character
+	if char then
+		local humanoid = char:FindFirstChildOfClass("Humanoid")
+		if humanoid then
+			-- Si le joueur avance
+			if humanoid.MoveDirection.Magnitude > 0.1 then
+				sprintTimer = math.min(sprintTimer + dt, 3.0) -- 3 secondes max
+				local sprintMultiplier = 1.0 + (0.5 * (sprintTimer / 3.0)) -- De 1x à 1.5x (+50%)
+				humanoid.WalkSpeed = currentBaseSpeed * sprintMultiplier
+			else
+				-- Dès qu'il s'arrête, on réinitialise sa vitesse normale
+				if sprintTimer > 0 then
+					humanoid.WalkSpeed = currentBaseSpeed
+				end
+				sprintTimer = 0
+				currentBaseSpeed = humanoid.WalkSpeed -- On enregistre sa vitesse de repos dictée par le serveur (Classe)
+			end
+		end
 	end
 	
 	-- Mettre à jour l'arme tenue

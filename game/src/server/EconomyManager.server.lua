@@ -13,6 +13,7 @@ local ClassConfig = require(Shared:WaitForChild("ClassConfig"))
 local UpdateMoney = Events:WaitForChild("UpdateMoney")
 local ShowNotification = Events:WaitForChild("ShowNotification")
 local ZombieDied = Events:WaitForChild("ZombieDied")
+local DamageZombie = Events:WaitForChild("DamageZombie")
 
 -- Double money flag par joueur
 local doubleMoneyPlayers = {} -- { [userId] = true/false }
@@ -114,6 +115,31 @@ workspace.ChildAdded:Connect(function(child)
 			end)
 		end
 	end
+end)
+
+-- Serveur fait autorité sur les dégâts et récompense à chaque impact
+DamageZombie.OnServerEvent:Connect(function(player, zombieModel, isHeadshot, weaponName)
+	if not zombieModel or not zombieModel:IsA("Model") then return end
+	local humanoid = zombieModel:FindFirstChild("Humanoid")
+	if not humanoid or humanoid.Health <= 0 then return end
+	
+	local WeaponConfig = require(Shared:WaitForChild("WeaponConfig"))
+	local wData = WeaponConfig.Weapons[weaponName]
+	if not wData then return end
+	
+	-- Calcul des dégâts
+	local damage = wData.damage
+	if isHeadshot then
+		damage *= (wData.headshotMult or 2)
+	end
+	
+	-- Appliquer rigoureusement côté serveur
+	humanoid:TakeDamage(damage)
+	
+	-- Donner la récompense d'impact (seulement s'il n'était pas déjà mort juste avant cet impact)
+	-- $50 pour un tir dans la tête, $10 pour un tir dans le corps
+	local reward = isHeadshot and 50 or 10
+	EconomyManager.addMoney(player, reward)
 end)
 
 -- Nettoyage

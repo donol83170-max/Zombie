@@ -194,7 +194,21 @@ local function createZombieModel(zombieType, wave)
 		humanoid.Parent = zombie
 	end
 	
-	local hp = config.baseHp + (config.hpPerWave * wave)
+	local hp
+	if zombieType == "Basic" then
+		-- Les 4 premières manches : 3 balles de Pistolet (45 HP)
+		if wave <= 4 then
+			hp = 45
+		else
+			-- À partir de la manche 5, on ajoute 15 HP par manche
+			-- jusqu'à une limite stricte de 180 HP (12 balles de pistolet max)
+			local extraWaves = wave - 4
+			hp = math.min(45 + (extraWaves * 15), 180)
+		end
+	else
+		hp = config.baseHp + (config.hpPerWave * wave)
+	end
+	
 	humanoid.MaxHealth = hp
 	humanoid.Health = hp
 	
