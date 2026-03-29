@@ -162,7 +162,10 @@ local function shoot()
 
 	local raycastParams = RaycastParams.new()
 	raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-	raycastParams.FilterDescendantsInstances = {char}
+	-- Exclure le joueur ET l'arme FPS (sinon les balles touchent l'arme !)
+	local excluded = {char}
+	if currentViewModel then table.insert(excluded, currentViewModel) end
+	raycastParams.FilterDescendantsInstances = excluded
 
 	local result = workspace:Raycast(origin, direction, raycastParams)
 	
@@ -170,7 +173,7 @@ local function shoot()
 	if result and result.Instance and result.Instance.Transparency > 0.5 and not result.Instance:FindFirstAncestorOfClass("Model") then
 		local newParams = RaycastParams.new()
 		newParams.FilterType = Enum.RaycastFilterType.Exclude
-		newParams.FilterDescendantsInstances = {char, result.Instance}
+		newParams.FilterDescendantsInstances = excluded
 		result = workspace:Raycast(origin, direction, newParams)
 	end
 

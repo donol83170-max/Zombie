@@ -1,31 +1,40 @@
--- SCRIPT DE SECOURS POUR LE FLASH (À copier dans la barre de commande de Roblox Studio)
+-- SCRIPT V2 : Placer le flash au BOUT DU CANON
+-- Colle ce script dans la barre de commande de Studio et appuie sur Entrée
 
 local weaponFolder = game.ReplicatedStorage:FindFirstChild("Weapons")
-if not weaponFolder then warn("Dossier Weapons introuvable !") return end
+local pistol = weaponFolder and weaponFolder:FindFirstChild("Pistol")
+if not pistol then warn("Pistol introuvable !") return end
 
-local pistol = weaponFolder:FindFirstChild("Pistol")
-if not pistol then warn("Modèle Pistol introuvable dans ReplicatedStorage.Weapons !") return end
+-- Trouver la pièce principale du pistolet (Handle)
+local handle = pistol:FindFirstChild("Handle") or pistol.PrimaryPart or pistol:FindFirstChildOfClass("BasePart")
+if not handle then warn("Handle introuvable !") return end
 
-local handle = pistol:FindFirstChild("Handle") or pistol:FindFirstChildOfClass("MeshPart") or pistol:FindFirstChildOfClass("Part")
-if not handle then warn("Handle introuvable dans le modèle Pistol !") return end
-
--- Trouver ou créer l'attachement
-local att = handle:FindFirstChild("Attachment") or handle:FindFirstChild("Muzzle") or handle:FindFirstChild("Flash")
-if not att then
-	att = Instance.new("Attachment")
-	att.Name = "Attachment"
-	att.Parent = handle
-	print("Attachment créé !")
-end
-
--- Centrer l'attachement au bout du canon (approximation sur l'axe Z)
-att.Position = Vector3.new(0, 0.2, -handle.Size.Z/2 - 0.2)
-
--- S'assurer que les particules sont dedans
-for _, child in ipairs(pistol:GetDescendants()) do
-	if child:IsA("ParticleEmitter") or child:IsA("Light") then
-		child.Parent = att
+-- Supprimer l'ancien attachement s'il existe
+for _, child in ipairs(handle:GetChildren()) do
+	if child:IsA("Attachment") then
+		-- Déplacer les emitters hors de l'attachment d'abord
+		for _, eff in ipairs(child:GetChildren()) do
+			eff.Parent = handle
+		end
+		child:Destroy()
 	end
 end
 
-print("✅ FLASH RÉPARÉ ! L'attachement est maintenant pile au bout du canon.")
+-- Créer un nouvel attachement au bout du canon
+-- Le pistolet est tourné de 180° en Y, donc le bout du canon est au -Z (avant du modèle d'origine)
+local att = Instance.new("Attachment")
+att.Name = "MuzzleFlash"
+att.Position = Vector3.new(0, 0, -handle.Size.Z / 2) -- Bout du canon côté -Z
+att.Parent = handle
+
+-- Mettre TOUS les emitters dans cet attachement
+local movedCount = 0
+for _, child in ipairs(handle:GetChildren()) do
+	if child:IsA("ParticleEmitter") or child:IsA("SpotLight") or child:IsA("PointLight") then
+		child.Parent = att
+		movedCount += 1
+	end
+end
+
+print("✅ Flash repositionné au bout du canon ! " .. movedCount .. " effets déplacés.")
+print("💡 Si le flash est du mauvais côté, remplace '-handle.Size.Z / 2' par '+handle.Size.Z / 2' dans le script.")
