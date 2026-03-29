@@ -98,11 +98,13 @@ local function updateViewModel(weaponName)
 	
 	-- Nettoyer les scripts parasites et fixer les collisions
 	for _, desc in ipairs(currentViewModel:GetDescendants()) do
-		if desc:IsA("Script") or desc:IsA("LocalScript") then
+		if desc:IsA("Script") or desc:IsA("LocalScript") or desc:IsA("Sound") then
 			desc:Destroy()
 		elseif desc:IsA("BasePart") then
 			desc.Anchored = true
 			desc.CanCollide = false
+		elseif desc:IsA("ParticleEmitter") or desc:IsA("Light") then
+			desc.Enabled = false
 		end
 	end
 	
@@ -136,6 +138,14 @@ local function shoot()
 	-- Appliquer un effet de recul brut sur l'arme 3D (elle recule et se lève)
 	recoilOffset = CFrame.new(0, 0, 0.4) * CFrame.Angles(math.rad(8), 0, 0)
 
+	-- Bruit de l'arme
+	local snd = Instance.new("Sound")
+	snd.SoundId = weaponData.fireSound or "rbxassetid://131138865"
+	snd.Volume = 0.6
+	snd.Parent = workspace.CurrentCamera
+	snd:Play()
+	task.delay(1.5, function() if snd then snd:Destroy() end end)
+
 	-- Raycast pour détecter les hits
 	local char = player.Character
 	if not char or not char:FindFirstChild("Head") then return end
@@ -149,6 +159,22 @@ local function shoot()
 
 	local result = workspace:Raycast(origin, direction, raycastParams)
 
+	-- EFFETS VISUELS DE LA TOOLBOX (Muzzle Flash, Flammes, etc.)
+	if currentViewModel then
+		for _, effect in ipairs(currentViewModel:GetDescendants()) do
+			if effect:IsA("ParticleEmitter") then
+				effect:Emit(15) -- Fait cracher les flammes de l'arme
+			elseif effect:IsA("Light") then
+				-- Fait flasher la lumière du canon
+				task.spawn(function()
+					effect.Enabled = true
+					task.wait(0.05)
+					effect.Enabled = false
+				end)
+			end
+		end
+	end
+	
 	if result then
 		local hit = result.Instance
 		-- Vérifier si on a touché un zombie

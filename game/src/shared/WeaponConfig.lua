@@ -20,6 +20,9 @@ WeaponConfig.Weapons = {
         -- Configuration Visuelle FPS
         fpsOffset = Vector3.new(0.5, -1, -2.0),
         fpsRotation = Vector3.new(0, -180, 0), -- Tourne l'arme de 90 degrés pour la mettre droite
+        
+        -- Sons
+        fireSound = "rbxassetid://104267069535370", -- Son de tir classique de Roblox
     },
     SMG = {
         displayName = "SMG",
