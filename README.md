@@ -50,6 +50,24 @@ Si le flash de ton arme ne part pas du bout du canon :
 
 ---
 
+## 👨‍💻 Guide pour ton frère (Collaboration)
+
+Pour que ton frère puisse travailler sur le jeu, il doit suivre ces étapes :
+
+1. **Télécharger le projet** : Il doit faire un `git clone` du dépôt GitHub sur son ordinateur.
+2. **Ouvrir le jeu** : Il doit ouvrir le fichier **`Zombies Waves.rbxl`** qui se trouve à la racine du dossier. C'est la map et tous les objets du jeu.
+3. **Installer Rojo** : 
+   - Il doit avoir l'extension Rojo dans son Visual Studio Code.
+   - Il doit avoir le plugin Rojo dans son Roblox Studio.
+4. **Synchroniser le code** :
+   - Dans un terminal (dans le dossier `game/`), il tape : `rojo serve`
+   - Dans Roblox Studio, il clique sur le bouton **Connect** du plugin Rojo.
+5. **Travailler ensemble** :
+   - Quand il change un script, il doit faire un `git commit` et `git push`.
+   - Toi, tu devras faire un `git pull` pour voir ses changements, et vice-versa !
+
+---
+
 ## 🚀 Lancer le projet
 
 ```bash
