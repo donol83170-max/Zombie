@@ -37,10 +37,10 @@ WeaponConfig.Weapons = {
         range = 100,
         headshotMult = 2.0,
 
-        -- Configuration Visuelle FPS
+        -- Configuration Visuelle FPS (RightGripAttachment)
         fpsOffset = Vector3.new(0.5, -1, -2.0),
-        fpsRotation = Vector3.new(0, -90, 0), -- Orientation sur les bras
-        gripOffset = Vector3.new(0, 0, -0.3), -- Décalé vers ta droite
+        fpsRotation = Vector3.new(90, 0, 180),
+        gripOffset = Vector3.new(-0.1, -0.3, -0.5),
         
         -- Sons
         fireSound = "rbxassetid://104267069535370", -- Son de tir classique de Roblox

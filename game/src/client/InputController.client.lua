@@ -24,7 +24,7 @@ local isSwitching = false
 local lastShotTime = 0
 
 -- ViewModel (Bras + Arme FPS)
-local armsTemplate = ReplicatedStorage:WaitForChild("Weapons"):WaitForChild("Arms")
+local armsTemplate = ReplicatedStorage:WaitForChild("Weapons"):WaitForChild("VMTemplate")
 local currentViewModel = nil
 local currentWeaponNameCache = ""
 local recoilOffset = CFrame.new(0, 0, 0)
@@ -135,33 +135,38 @@ local function updateViewModel(weaponName)
 		currentViewModel = nil
 	end
 
-	-- Cloner les bras
+	-- Cloner les bras (VMTemplate)
 	local arms = armsTemplate:Clone()
 
-	-- Nettoyer les bras (scripts, collision, cacher le Handle)
+	-- Supprimer les éléments de preview Studio
+	local cam = arms:FindFirstChild("Camera")
+	if cam then cam:Destroy() end
+	local thumbCam = arms:FindFirstChild("ThumbnailCamera")
+	if thumbCam then thumbCam:Destroy() end
+
+	-- Nettoyer les bras (scripts, collision)
 	for _, desc in ipairs(arms:GetDescendants()) do
 		if desc:IsA("Script") or desc:IsA("LocalScript") then
 			desc:Destroy()
 		elseif desc:IsA("BasePart") then
 			desc.Anchored = true
 			desc.CanCollide = false
-			if desc.Name == "Handle" then
-				desc.Transparency = 1
-			end
 		end
 	end
+
+	-- Trouver le point d'attache sur la main droite
+	local rightArm = arms:FindFirstChild("Right Arm")
+	local gripAttachment = rightArm and rightArm:FindFirstChild("RightGripAttachment")
 
 	-- Chercher le modèle d'arme
 	local weaponsFolder = ReplicatedStorage:FindFirstChild("Weapons")
 	local gunTemplate = weaponsFolder and weaponsFolder:FindFirstChild(weaponName)
-	local handle = arms:FindFirstChild("Handle")
 
-	if gunTemplate and handle then
+	if gunTemplate and gripAttachment then
 		local gun
 		if gunTemplate:IsA("Model") then
 			gun = gunTemplate:Clone()
 		elseif gunTemplate:IsA("BasePart") then
-			-- Si c'est un MeshPart/Part, l'envelopper dans un Model
 			gun = Instance.new("Model")
 			gun.Name = weaponName
 			local clonedPart = gunTemplate:Clone()
@@ -184,14 +189,15 @@ local function updateViewModel(weaponName)
 				end
 			end
 
-			-- Positionner l'arme au Handle des bras avec rotation et offset par arme
+			-- Positionner l'arme au RightGripAttachment avec rotation et offset par arme
 			local wData = WeaponConfig.Weapons[weaponName]
 			local rot = wData and wData.fpsRotation or Vector3.new(0, -90, 0)
 			local gripOff = wData and wData.gripOffset or Vector3.new(0, 0, 0)
-			gun:PivotTo(handle.CFrame * CFrame.new(gripOff) * CFrame.Angles(math.rad(rot.X), math.rad(rot.Y), math.rad(rot.Z)))
+			local gripCFrame = rightArm.CFrame * gripAttachment.CFrame
+			gun:PivotTo(gripCFrame * CFrame.new(gripOff) * CFrame.Angles(math.rad(rot.X), math.rad(rot.Y), math.rad(rot.Z)))
 			gun.Parent = arms
 		end
-	else
+	elseif not gunTemplate and weaponName ~= "KNIFE" then
 		print("[InputController] ALERTE: Modèle '" .. weaponName .. "' introuvable !")
 	end
 
@@ -499,7 +505,8 @@ RunService.RenderStepped:Connect(function(dt)
 	if currentViewModel then
 
 		-- Offset des bras (position fixe devant la caméra)
-		local armsOffset = CFrame.new(0, -1, -1)
+		-- X = droite/gauche, Y = haut/bas, Z = avant/arrière (négatif = devant)
+		local armsOffset = CFrame.new(0, -1.8, 0.4)
 
 		-- Appliquer le recul
 		recoilOffset = recoilOffset:Lerp(CFrame.new(0, 0, 0), dt * 15)

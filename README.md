@@ -10,12 +10,13 @@
 - **Hitmarker sonore** quand un zombie est touche
 - **Rechargement** : touche `R` a tout moment, hint "Appuyer sur R" quand le chargeur est vide
 
-### Bras FPS (ViewModel Arms)
-- **Modele de bras** attache a la camera pour un rendu FPS realiste
+### Bras FPS (VMTemplate)
+- **Nouveau modele de bras realiste** (VMTemplate) avec Humanoid, Body Colors et Shirt
 - Les bras suivent la camera avec recul et sway
-- Le modele "Arms" est dans `ReplicatedStorage/Weapons/Arms`
-- Chaque arme est attachee au `Handle` des bras avec rotation et offset configurables
-- Le Handle est rendu invisible automatiquement
+- Le modele "VMTemplate" est dans `ReplicatedStorage/Weapons/VMTemplate`
+- Chaque arme est attachee au **RightGripAttachment** du `Right Arm` avec rotation et offset configurables
+- Camera et ThumbnailCamera du modele sont supprimes automatiquement en jeu (preview Studio uniquement)
+- Position de la camera FPS optimisee (bras descendus et recules pour un meilleur rendu)
 
 ### Systeme de Slots (Switch d'armes)
 - **Touche 1** : equipe l'arme primaire (pistolet par defaut, ou celle achetee)
