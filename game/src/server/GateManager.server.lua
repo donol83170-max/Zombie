@@ -10,7 +10,7 @@ local UpdateMoney = Events:WaitForChild("UpdateMoney")
 
 local OPEN_ANGLE = 90 -- degrés d'ouverture
 local OPEN_TIME = 1.5 -- secondes pour l'animation
-local GATE_PRICE = 50
+local GATE_PRICE = 1500
 
 local function setupGate(gateModel)
 	-- Trouver les deux battants
@@ -138,18 +138,15 @@ local function setupGate(gateModel)
 			isAnimating = true
 			rotateDoorAroundHinge(doorLParts, hingeL, OPEN_ANGLE, OPEN_TIME)
 			rotateDoorAroundHinge(doorRParts, hingeR, -OPEN_ANGLE, OPEN_TIME)
-			prompt.ActionText = "Fermer"
 			isOpen = true
-		else
-			isAnimating = true
-			rotateDoorAroundHinge(doorLParts, hingeL, 0, OPEN_TIME)
-			rotateDoorAroundHinge(doorRParts, hingeR, 0, OPEN_TIME)
-			prompt.ActionText = "Ouvrir — $" .. GATE_PRICE
-			isOpen = false
-		end
 
-		task.wait(OPEN_TIME)
-		isAnimating = false
+			task.wait(OPEN_TIME)
+			isAnimating = false
+
+			-- Une fois ouverte, on désactive le prompt définitivement
+			prompt.Enabled = false
+			return
+		end
 	end)
 
 	print("[GateManager] Portail configuré : " .. gateModel:GetFullName())

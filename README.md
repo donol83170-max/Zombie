@@ -57,7 +57,7 @@
 
 ### Portail Interactif
 - **Touche E** pour ouvrir/fermer le portail
-- **Coute $50** pour ouvrir (fermer est gratuit)
+- **Coute $1500** pour ouvrir (ouverture definitive, ne peut pas etre refermee)
 - Les deux battants s'ouvrent avec une animation fluide (TweenService, 1.5s)
 - ProximityPrompt centre sur le portail avec affichage du prix
 - Fonctionne avec n'importe quel Model nomme "Gate" contenant "DoorCLoseL" et "DoorCloseR"
