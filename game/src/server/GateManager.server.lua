@@ -3,9 +3,14 @@
 -- Fonctionne avec des positions relatives : déplacer le portail ne casse rien
 
 local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Events = ReplicatedStorage:WaitForChild("Events")
+local ShowNotification = Events:WaitForChild("ShowNotification")
+local UpdateMoney = Events:WaitForChild("UpdateMoney")
 
 local OPEN_ANGLE = 90 -- degrés d'ouverture
 local OPEN_TIME = 1.5 -- secondes pour l'animation
+local GATE_PRICE = 50
 
 local function setupGate(gateModel)
 	-- Trouver les deux battants
@@ -93,7 +98,7 @@ local function setupGate(gateModel)
 	promptPart.Parent = innerGate
 
 	local prompt = Instance.new("ProximityPrompt")
-	prompt.ActionText = "Ouvrir"
+	prompt.ActionText = "Ouvrir — $" .. GATE_PRICE
 	prompt.ObjectText = "Portail"
 	prompt.HoldDuration = 0.5
 	prompt.MaxActivationDistance = 10
@@ -116,17 +121,30 @@ local function setupGate(gateModel)
 
 	prompt.Triggered:Connect(function(player)
 		if isAnimating then return end
-		isAnimating = true
 
 		if not isOpen then
+			-- Vérifier l'argent pour ouvrir
+			local economy = _G.EconomyManager
+			if not economy then return end
+
+			if not economy.canAfford(player, GATE_PRICE) then
+				ShowNotification:FireClient(player, "Fonds insuffisants !", "#FF0000", 2)
+				return
+			end
+
+			local success = economy.removeMoney(player, GATE_PRICE)
+			if not success then return end
+
+			isAnimating = true
 			rotateDoorAroundHinge(doorLParts, hingeL, OPEN_ANGLE, OPEN_TIME)
 			rotateDoorAroundHinge(doorRParts, hingeR, -OPEN_ANGLE, OPEN_TIME)
 			prompt.ActionText = "Fermer"
 			isOpen = true
 		else
+			isAnimating = true
 			rotateDoorAroundHinge(doorLParts, hingeL, 0, OPEN_TIME)
 			rotateDoorAroundHinge(doorRParts, hingeR, 0, OPEN_TIME)
-			prompt.ActionText = "Ouvrir"
+			prompt.ActionText = "Ouvrir — $" .. GATE_PRICE
 			isOpen = false
 		end
 

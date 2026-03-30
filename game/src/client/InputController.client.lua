@@ -151,7 +151,15 @@ local function updateViewModel(weaponName)
 		elseif desc:IsA("BasePart") then
 			desc.Anchored = true
 			desc.CanCollide = false
+			desc.CanQuery = false
+			desc.CanTouch = false
 		end
+	end
+
+	-- Désactiver le Humanoid du ViewModel (évite les collisions fantômes)
+	local vmHumanoid = arms:FindFirstChildOfClass("Humanoid")
+	if vmHumanoid then
+		vmHumanoid.EvaluateStateMachine = false
 	end
 
 	-- Trouver le point d'attache sur la main droite

@@ -17,6 +17,7 @@
 - Chaque arme est attachee au **RightGripAttachment** du `Right Arm` avec rotation et offset configurables
 - Camera et ThumbnailCamera du modele sont supprimes automatiquement en jeu (preview Studio uniquement)
 - Position de la camera FPS optimisee (bras descendus et recules pour un meilleur rendu)
+- **Fix collision** : le Humanoid du ViewModel est desactive (EvaluateStateMachine = false) et toutes les parts sont en CanCollide/CanQuery/CanTouch = false pour eviter les collisions fantomes
 
 ### Systeme de Slots (Switch d'armes)
 - **Touche 1** : equipe l'arme primaire (pistolet par defaut, ou celle achetee)
@@ -47,7 +48,8 @@
 ### Wall Buy (Achat d'armes aux murs) -- Style COD
 - **Placement libre** : place n'importe quel modele ou objet dans le dossier `WallBuys` de Workspace
 - **Nommage simple** : renomme l'objet en `WallBuy_NomArme` (ex : `WallBuy_Pistol`, `WallBuy_AK47`)
-- Le script detecte automatiquement l'objet et ajoute le **ProximityPrompt** d'achat + le **texte** (nom + prix)
+- Le script detecte automatiquement l'objet et ajoute le **ProximityPrompt** d'achat avec nom + prix
+- Plus de texte flottant (BillboardGui) : tout est affiche directement dans le **ProximityPrompt**
 - Fonctionne avec des **Parts** et des **Models** (cherche la PrimaryPart ou la premiere Part)
 - Detection dynamique : les wall buys ajoutes en cours de jeu sont detectes aussi
 - Nettoyage automatique des espaces dans les noms
@@ -55,8 +57,9 @@
 
 ### Portail Interactif
 - **Touche E** pour ouvrir/fermer le portail
+- **Coute $50** pour ouvrir (fermer est gratuit)
 - Les deux battants s'ouvrent avec une animation fluide (TweenService, 1.5s)
-- ProximityPrompt centre sur le portail
+- ProximityPrompt centre sur le portail avec affichage du prix
 - Fonctionne avec n'importe quel Model nomme "Gate" contenant "DoorCLoseL" et "DoorCloseR"
 - **Positions relatives** : deplacer le portail dans Studio ne casse rien
 
@@ -70,7 +73,7 @@
 | Arme | Prix | Degats | Cadence | Chargeur | Portee |
 |------|------|--------|---------|----------|--------|
 | Couteau | 0$ | 35 | 120 RPM | -- | 8 |
-| Pistolet | 0$ | 15 | 300 RPM | 12 | 100 |
+| Pistolet | 250$ | 15 | 300 RPM | 12 | 100 |
 | SMG | 800$ | 12 | 600 RPM | 30 | 80 |
 | Shotgun | 1500$ | 50x8 | 90 RPM | 8 | 30 |
 | AK-47 | 2500$ | 25 | 450 RPM | 30 | 120 |
@@ -128,7 +131,7 @@ Pour que ton frere puisse travailler sur le jeu, il doit suivre ces etapes :
 1. Dans Roblox Studio, ouvre le dossier `WallBuys` dans Workspace (il est cree automatiquement)
 2. Place le modele ou objet de ton choix dans ce dossier
 3. Renomme-le en `WallBuy_NomArme` :
-   - `WallBuy_Pistol` (gratuit)
+   - `WallBuy_Pistol` (250$)
    - `WallBuy_SMG` (800$)
    - `WallBuy_Shotgun` (1500$)
    - `WallBuy_AK47` (2500$)

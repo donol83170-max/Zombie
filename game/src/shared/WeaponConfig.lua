@@ -27,7 +27,7 @@ WeaponConfig.Weapons = {
     },
     Pistol = {
         displayName = "Pistolet",
-        price = 0,                -- gratuit (arme de départ)
+        price = 250,
         damage = 15,
         rpm = 300,                -- rounds per minute
         magSize = 12,

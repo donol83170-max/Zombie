@@ -37,43 +37,10 @@ local function setupWallBuy(object, weaponId)
 		end
 	end
 
-	-- BillboardGui avec nom et prix
-	local billboard = Instance.new("BillboardGui")
-	billboard.Size = UDim2.new(6, 0, 3, 0)
-	billboard.StudsOffset = Vector3.new(0, 3, 0)
-	billboard.AlwaysOnTop = false
-	billboard.Parent = targetPart
-
-	local nameLabel = Instance.new("TextLabel")
-	nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
-	nameLabel.Position = UDim2.new(0, 0, 0, 0)
-	nameLabel.BackgroundTransparency = 1
-	nameLabel.Text = weaponData.displayName
-	nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	nameLabel.TextScaled = true
-	nameLabel.Font = Enum.Font.GothamBold
-	nameLabel.Parent = billboard
-
-	local priceLabel = Instance.new("TextLabel")
-	priceLabel.Size = UDim2.new(1, 0, 0.4, 0)
-	priceLabel.Position = UDim2.new(0, 0, 0.5, 0)
-	priceLabel.BackgroundTransparency = 1
-	priceLabel.TextScaled = true
-	priceLabel.Font = Enum.Font.GothamBold
-	priceLabel.Parent = billboard
-
-	if weaponData.price == 0 then
-		priceLabel.Text = "GRATUIT"
-		priceLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-	else
-		priceLabel.Text = "$" .. weaponData.price
-		priceLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-	end
-
-	-- ProximityPrompt
+	-- ProximityPrompt (affiche le nom + prix directement)
 	local prompt = Instance.new("ProximityPrompt")
-	prompt.ActionText = "Acheter"
-	prompt.ObjectText = weaponData.displayName .. " — $" .. weaponData.price
+	prompt.ActionText = "Acheter — $" .. weaponData.price
+	prompt.ObjectText = weaponData.displayName
 	prompt.HoldDuration = 0.3
 	prompt.MaxActivationDistance = 8
 	prompt.Parent = targetPart
