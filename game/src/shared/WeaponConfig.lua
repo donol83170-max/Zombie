@@ -95,6 +95,25 @@ WeaponConfig.Weapons = {
         range = 300,
         headshotMult = 3.0,
     },
+    DesertEagle = {
+        displayName = "Desert Eagle",
+        price = 500,
+        damage = 50,
+        rpm = 120,                -- lent et puissant
+        magSize = 6,
+        reserveAmmo = 30,
+        reloadTime = 1.5,
+        fireMode = "semi",
+        range = 120,
+        headshotMult = 2.0,
+
+        -- Viewmodel custom (arme intégrée dans le modèle de bras)
+        customViewModel = "vblanktemplate deserteagle1",
+        reloadAnimId = "rbxassetid://71372150802099",
+
+        -- Sons
+        fireSound = "rbxassetid://131138865",
+    },
     Flamethrower = {
         displayName = "Lance-flammes",
         price = 6000,
@@ -118,6 +137,6 @@ WeaponConfig.WallBuys = {
 }
 
 -- Armes du shop
-WeaponConfig.ShopWeapons = { "Pistol", "SMG", "Shotgun", "AK47", "Sniper", "Flamethrower" }
+WeaponConfig.ShopWeapons = { "Pistol", "DesertEagle", "SMG", "Shotgun", "AK47", "Sniper", "Flamethrower" }
 
 return WeaponConfig

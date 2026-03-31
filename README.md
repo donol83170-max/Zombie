@@ -154,8 +154,49 @@ Puis connecte le plugin **Rojo** dans Roblox Studio.
 
 ---
 
+## Systeme de Custom Viewmodel (Desert Eagle)
+
+Le Desert Eagle utilise un **viewmodel custom** (`vblanktemplate deserteagle1`) ou l'arme et les bras sont integres dans un seul modele, contrairement au systeme standard (VMTemplate + arme separee).
+
+### Comment ca marche
+- `WeaponConfig.lua` : le champ `customViewModel` pointe vers le modele dans `ReplicatedStorage/Weapons`
+- `WeaponConfig.lua` : le champ `reloadAnimId` contient l'ID de l'animation de reload
+- `InputController` : detecte `customViewModel` et clone le modele complet au lieu de VMTemplate + arme
+- `InputController` : cree un Humanoid + Animator pour jouer les animations
+- `ViewmodelController` : applique les transforms Motor6D apres PivotTo pour les animations
+
+### Problemes connus (a corriger)
+- **Animation de reload ne se joue pas visuellement** : l'animation est chargee et `Play()` est appele, mais les Motor6D transforms ne semblent pas se repercuter sur les parts ancrees. Il faut investiguer si l'Animator met bien a jour `Motor6D.Transform` sur des parts ancrees, ou trouver une autre methode de positionnement compatible avec les animations.
+- **Position des bras** : le custom viewmodel utilise un offset different (`CFrame.new(0, -1.8, -3.5)`) du viewmodel standard (`CFrame.new(0, -1.8, 0.4)`) car le modele avait un probleme de clipping camera. Il faudra ajuster la position/rotation pour un meilleur rendu FPS.
+- **Pas de sway/bobbing** : le custom viewmodel est positionne depuis InputController (pas ViewmodelController) donc il n'a pas le sway souris, le bobbing de marche, etc. Il faudra integrer le positionnement dans ViewmodelController.
+
+### Ajouter une nouvelle arme avec custom viewmodel
+1. Creer le modele de bras + arme dans Studio (avec Motor6Ds pour les joints)
+2. Creer les animations dans l'Animation Editor et les publier sur Roblox
+3. Placer le modele dans `ReplicatedStorage/Weapons/NomDuModele`
+4. Ajouter l'arme dans `WeaponConfig.lua` avec `customViewModel` et `reloadAnimId`
+
+---
+
+| Arme | Prix | Degats | Cadence | Chargeur | Portee |
+|------|------|--------|---------|----------|--------|
+| Couteau | 0$ | 35 | 120 RPM | -- | 8 |
+| Pistolet | 250$ | 15 | 300 RPM | 12 | 100 |
+| **Desert Eagle** | **500$** | **50** | **120 RPM** | **6** | **120** |
+| SMG | 800$ | 12 | 600 RPM | 30 | 80 |
+| Shotgun | 1500$ | 50x8 | 90 RPM | 8 | 30 |
+| AK-47 | 2500$ | 25 | 450 RPM | 30 | 120 |
+| Sniper | 4000$ | 100 | 40 RPM | 5 | 300 |
+| Lance-flammes | 6000$ | 8/tick | continu | 100 | 25 |
+
+---
+
 ## Prochaines etapes suggerees
-- [ ] Animations de bras (idle, tir, rechargement)
+- [ ] **Corriger l'animation de reload du Desert Eagle** (Motor6D transforms sur parts ancrees)
+- [ ] **Ajuster la position/rotation des bras du Desert Eagle** pour un bon rendu FPS
+- [ ] **Integrer le sway/bobbing** pour le custom viewmodel
+- [ ] Animation de tir Desert Eagle
+- [ ] Animations de bras (idle, tir, rechargement) pour les autres armes
 - [ ] Animation de marche zombie
 - [ ] Perks (Juggernog, Speed Cola, Double Tap...)
 - [ ] Pack-a-Punch (amelioration d'armes)

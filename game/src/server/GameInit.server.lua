@@ -70,33 +70,33 @@ Players.PlayerAdded:Connect(function(player)
 	-- Weapon data
 	local weaponName = Instance.new("StringValue")
 	weaponName.Name = "WeaponName"
-	weaponName.Value = "Pistol"
+	weaponName.Value = "DesertEagle"
 	weaponName.Parent = sessionData
 
 	local currentAmmo = Instance.new("IntValue")
 	currentAmmo.Name = "CurrentAmmo"
-	currentAmmo.Value = 12
+	currentAmmo.Value = 6
 	currentAmmo.Parent = sessionData
 
 	local reserveAmmo = Instance.new("IntValue")
 	reserveAmmo.Name = "ReserveAmmo"
-	reserveAmmo.Value = 48
+	reserveAmmo.Value = 30
 	reserveAmmo.Parent = sessionData
 
 	-- Arme primaire sauvegardée (pour le switch avec le couteau)
 	local primaryWeapon = Instance.new("StringValue")
 	primaryWeapon.Name = "PrimaryWeaponName"
-	primaryWeapon.Value = "Pistol"
+	primaryWeapon.Value = "DesertEagle"
 	primaryWeapon.Parent = sessionData
 
 	local primaryAmmo = Instance.new("IntValue")
 	primaryAmmo.Name = "PrimaryAmmo"
-	primaryAmmo.Value = 12
+	primaryAmmo.Value = 6
 	primaryAmmo.Parent = sessionData
 
 	local primaryReserve = Instance.new("IntValue")
 	primaryReserve.Name = "PrimaryReserve"
-	primaryReserve.Value = 48
+	primaryReserve.Value = 30
 	primaryReserve.Parent = sessionData
 
 	-- Slot actif (1 = primaire, 2 = couteau)

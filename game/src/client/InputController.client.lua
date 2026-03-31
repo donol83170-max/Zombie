@@ -29,11 +29,17 @@ local armsTemplate = ReplicatedStorage:WaitForChild("Weapons"):WaitForChild("VMT
 local currentViewModel = nil
 local currentWeaponNameCache = ""
 local recoilOffset = CFrame.new(0, 0, 0)
+local currentReloadTrack = nil
+local useCustomVM = false
 
 -- API publique pour ViewmodelController
 _G.InputController = {
-    getViewModel = function() return currentViewModel end,
-    getRecoil    = function() return recoilOffset end,
+    getViewModel  = function() return currentViewModel end,
+    getRecoil     = function() return recoilOffset end,
+    isReloading   = function() return isReloading end,
+    isSwitching   = function() return isSwitching end,
+    isShooting    = function() return isShooting end,
+    isCustomVM    = function() return useCustomVM end,
 }
 
 -- Mouvement (Sprint)
@@ -140,79 +146,134 @@ local function updateViewModel(weaponName)
 		currentViewModel:Destroy()
 		currentViewModel = nil
 	end
+	currentReloadTrack = nil
+	useCustomVM = false
 
-	-- Cloner les bras (VMTemplate)
-	local arms = armsTemplate:Clone()
+	local wData = WeaponConfig.Weapons[weaponName]
+	local isCustom = wData and wData.customViewModel
+	local arms
 
-	-- Supprimer les éléments de preview Studio
-	local cam = arms:FindFirstChild("Camera")
-	if cam then cam:Destroy() end
-	local thumbCam = arms:FindFirstChild("ThumbnailCamera")
-	if thumbCam then thumbCam:Destroy() end
-
-	-- Nettoyer les bras (scripts, collision)
-	for _, desc in ipairs(arms:GetDescendants()) do
-		if desc:IsA("Script") or desc:IsA("LocalScript") then
-			desc:Destroy()
-		elseif desc:IsA("BasePart") then
-			desc.Anchored = true
-			desc.CanCollide = false
-			desc.CanQuery = false
-			desc.CanTouch = false
+	if isCustom then
+		-- ═══ CUSTOM VIEWMODEL (arme intégrée, ex: Desert Eagle) ═══
+		local weaponsFolder = ReplicatedStorage:FindFirstChild("Weapons")
+		local customTemplate = weaponsFolder and weaponsFolder:FindFirstChild(wData.customViewModel)
+		if not customTemplate then
+			print("[InputController] ALERTE: Custom viewmodel '" .. wData.customViewModel .. "' introuvable !")
+			return
 		end
-	end
+		arms = customTemplate:Clone()
+		useCustomVM = true
 
-	-- Désactiver le Humanoid du ViewModel (évite les collisions fantômes)
-	local vmHumanoid = arms:FindFirstChildOfClass("Humanoid")
-	if vmHumanoid then
+		-- Nettoyer : tout ancré (les animations Motor6D sont appliquées manuellement)
+		for _, desc in ipairs(arms:GetDescendants()) do
+			if desc:IsA("Script") or desc:IsA("LocalScript") then
+				desc:Destroy()
+			elseif desc:IsA("BasePart") then
+				desc.Anchored = true
+				desc.CanCollide = false
+				desc.CanQuery = false
+				desc.CanTouch = false
+			elseif desc:IsA("ParticleEmitter") then
+				desc.Rate = 0
+			elseif desc:IsA("Light") then
+				desc.Enabled = false
+			end
+		end
+
+		-- Créer un Humanoid si le modèle n'en a pas (nécessaire pour l'Animator)
+		local vmHumanoid = arms:FindFirstChildOfClass("Humanoid")
+		if not vmHumanoid then
+			vmHumanoid = Instance.new("Humanoid")
+			vmHumanoid.Parent = arms
+		end
 		vmHumanoid.EvaluateStateMachine = false
-	end
 
-	-- Trouver le point d'attache sur la main droite
-	local rightArm = arms:FindFirstChild("Right Arm")
-	local gripAttachment = rightArm and rightArm:FindFirstChild("RightGripAttachment")
-
-	-- Chercher le modèle d'arme
-	local weaponsFolder = ReplicatedStorage:FindFirstChild("Weapons")
-	local gunTemplate = weaponsFolder and weaponsFolder:FindFirstChild(weaponName)
-
-	if gunTemplate and gripAttachment then
-		local gun
-		if gunTemplate:IsA("Model") then
-			gun = gunTemplate:Clone()
-		elseif gunTemplate:IsA("BasePart") then
-			gun = Instance.new("Model")
-			gun.Name = weaponName
-			local clonedPart = gunTemplate:Clone()
-			clonedPart.Parent = gun
-			gun.PrimaryPart = clonedPart
+		-- Mettre l'Animator sous le Humanoid
+		local animator = vmHumanoid:FindFirstChildOfClass("Animator")
+		if not animator then
+			local existingAnimator = arms:FindFirstChild("Animator", true)
+			if existingAnimator and existingAnimator:IsA("Animator") then
+				existingAnimator.Parent = vmHumanoid
+				animator = existingAnimator
+			else
+				animator = Instance.new("Animator")
+				animator.Parent = vmHumanoid
+			end
 		end
 
-		if gun then
-			-- Nettoyer l'arme
-			for _, desc in ipairs(gun:GetDescendants()) do
-				if desc:IsA("Script") or desc:IsA("LocalScript") then
-					desc:Destroy()
-				elseif desc:IsA("BasePart") then
-					desc.Anchored = true
-					desc.CanCollide = false
-				elseif desc:IsA("ParticleEmitter") then
-					desc.Rate = 0
-				elseif desc:IsA("Light") then
-					desc.Enabled = false
-				end
+		-- Charger l'animation de reload
+		if wData.reloadAnimId and animator then
+			local reloadAnim = Instance.new("Animation")
+			reloadAnim.AnimationId = wData.reloadAnimId
+			currentReloadTrack = animator:LoadAnimation(reloadAnim)
+			print("[InputController] Animation reload chargée pour " .. weaponName)
+		end
+	else
+		-- ═══ VIEWMODEL STANDARD (VMTemplate + arme séparée) ═══
+		arms = armsTemplate:Clone()
+
+		local cam = arms:FindFirstChild("Camera")
+		if cam then cam:Destroy() end
+		local thumbCam = arms:FindFirstChild("ThumbnailCamera")
+		if thumbCam then thumbCam:Destroy() end
+
+		for _, desc in ipairs(arms:GetDescendants()) do
+			if desc:IsA("Script") or desc:IsA("LocalScript") then
+				desc:Destroy()
+			elseif desc:IsA("BasePart") then
+				desc.Anchored = true
+				desc.CanCollide = false
+				desc.CanQuery = false
+				desc.CanTouch = false
+			end
+		end
+
+		local vmHumanoid = arms:FindFirstChildOfClass("Humanoid")
+		if vmHumanoid then
+			vmHumanoid.EvaluateStateMachine = false
+		end
+
+		local rightArm = arms:FindFirstChild("Right Arm")
+		local gripAttachment = rightArm and rightArm:FindFirstChild("RightGripAttachment")
+
+		local weaponsFolder = ReplicatedStorage:FindFirstChild("Weapons")
+		local gunTemplate = weaponsFolder and weaponsFolder:FindFirstChild(weaponName)
+
+		if gunTemplate and gripAttachment then
+			local gun
+			if gunTemplate:IsA("Model") then
+				gun = gunTemplate:Clone()
+			elseif gunTemplate:IsA("BasePart") then
+				gun = Instance.new("Model")
+				gun.Name = weaponName
+				local clonedPart = gunTemplate:Clone()
+				clonedPart.Parent = gun
+				gun.PrimaryPart = clonedPart
 			end
 
-			-- Positionner l'arme au RightGripAttachment avec rotation et offset par arme
-			local wData = WeaponConfig.Weapons[weaponName]
-			local rot = wData and wData.fpsRotation or Vector3.new(0, -90, 0)
-			local gripOff = wData and wData.gripOffset or Vector3.new(0, 0, 0)
-			local gripCFrame = rightArm.CFrame * gripAttachment.CFrame
-			gun:PivotTo(gripCFrame * CFrame.new(gripOff) * CFrame.Angles(math.rad(rot.X), math.rad(rot.Y), math.rad(rot.Z)))
-			gun.Parent = arms
+			if gun then
+				for _, desc in ipairs(gun:GetDescendants()) do
+					if desc:IsA("Script") or desc:IsA("LocalScript") then
+						desc:Destroy()
+					elseif desc:IsA("BasePart") then
+						desc.Anchored = true
+						desc.CanCollide = false
+					elseif desc:IsA("ParticleEmitter") then
+						desc.Rate = 0
+					elseif desc:IsA("Light") then
+						desc.Enabled = false
+					end
+				end
+
+				local rot = wData and wData.fpsRotation or Vector3.new(0, -90, 0)
+				local gripOff = wData and wData.gripOffset or Vector3.new(0, 0, 0)
+				local gripCFrame = rightArm.CFrame * gripAttachment.CFrame
+				gun:PivotTo(gripCFrame * CFrame.new(gripOff) * CFrame.Angles(math.rad(rot.X), math.rad(rot.Y), math.rad(rot.Z)))
+				gun.Parent = arms
+			end
+		elseif not gunTemplate and weaponName ~= "KNIFE" then
+			print("[InputController] ALERTE: Modèle '" .. weaponName .. "' introuvable !")
 		end
-	elseif not gunTemplate and weaponName ~= "KNIFE" then
-		print("[InputController] ALERTE: Modèle '" .. weaponName .. "' introuvable !")
 	end
 
 	-- PrimaryPart = HumanoidRootPart pour le positionnement
@@ -417,6 +478,11 @@ function reload()
 
 	isReloading = true
 
+	-- Jouer l'animation de rechargement si disponible
+	if currentReloadTrack then
+		currentReloadTrack:Play()
+	end
+
 	-- Notification rechargement
 	local hud = player.PlayerGui:FindFirstChild("HUD")
 	if hud then
@@ -452,6 +518,11 @@ function reload()
 	end
 
 	isReloading = false
+
+	-- Arrêter l'animation si elle joue encore
+	if currentReloadTrack and currentReloadTrack.IsPlaying then
+		currentReloadTrack:Stop()
+	end
 end
 
 -- === INPUT BINDINGS ===
@@ -514,9 +585,17 @@ RunService.RenderStepped:Connect(function(dt)
 		updateViewModel(weaponName)
 	end
 	
-	-- Smooth retour du recoil vers zéro (le PivotTo est géré par ViewmodelController)
+	-- Smooth retour du recoil vers zéro
 	if currentViewModel then
 		recoilOffset = recoilOffset:Lerp(CFrame.new(0, 0, 0), dt * 15)
+	end
+
+	-- TEST : positionner le custom viewmodel loin devant la caméra pour le voir
+	if currentViewModel and useCustomVM then
+		local cam = workspace.CurrentCamera
+		if cam then
+			currentViewModel:PivotTo(cam.CFrame * CFrame.new(0, -1.8, -3.5))
+		end
 	end
 end)
 

@@ -150,6 +150,16 @@ RunService.RenderStepped:Connect(function(dt)
         * recoilOffset
 
     viewmodel:PivotTo(finalCFrame)
+
+    -- Custom viewmodel : appliquer les transforms Motor6D pour les animations
+    local isCustom = IC.isCustomVM and IC.isCustomVM() or false
+    if isCustom then
+        for _, motor in ipairs(viewmodel:GetDescendants()) do
+            if motor:IsA("Motor6D") and motor.Part0 and motor.Part1 then
+                motor.Part1.CFrame = motor.Part0.CFrame * motor.C0 * motor.Transform * motor.C1:Inverse()
+            end
+        end
+    end
 end)
 
 print("[ViewmodelController] Initialisé !")
