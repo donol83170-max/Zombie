@@ -14,6 +14,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Events = ReplicatedStorage:WaitForChild("Events")
 local WeaponConfig = require(Shared:WaitForChild("WeaponConfig"))
 local GameConfig = require(Shared:WaitForChild("GameConfig"))
+local ClassConfig = require(Shared:WaitForChild("ClassConfig"))
 
 local UpdateAmmo = Events:WaitForChild("UpdateAmmo")
 
@@ -28,7 +29,12 @@ local armsTemplate = ReplicatedStorage:WaitForChild("Weapons"):WaitForChild("VMT
 local currentViewModel = nil
 local currentWeaponNameCache = ""
 local recoilOffset = CFrame.new(0, 0, 0)
-local swayOffset = CFrame.new(0, 0, 0)
+
+-- API publique pour ViewmodelController
+_G.InputController = {
+    getViewModel = function() return currentViewModel end,
+    getRecoil    = function() return recoilOffset end,
+}
 
 -- Mouvement (Sprint)
 local sprintTimer = 0
@@ -483,11 +489,10 @@ RunService.RenderStepped:Connect(function(dt)
 	if char then
 		local humanoid = char:FindFirstChildOfClass("Humanoid")
 		if humanoid then
-			-- Récupérer la vitesse de base de la classe
-			local classConfig = require(Shared:WaitForChild("ClassConfig"))
+			-- Récupérer la vitesse de base de la classe (ClassConfig est caché en haut du script)
 			local sessionData = player:FindFirstChild("SessionData")
 			local className = sessionData and sessionData:FindFirstChild("Class") and sessionData.Class.Value or "Soldier"
-			local classData = classConfig.Classes[className]
+			local classData = ClassConfig.Classes[className]
 			local baseSpeed = (classData and classData.speedMult or 1.0) * 16 -- 16 est le défaut Roblox
 
 			-- Si le joueur avance
@@ -509,22 +514,9 @@ RunService.RenderStepped:Connect(function(dt)
 		updateViewModel(weaponName)
 	end
 	
-	-- Positionner visuellement les bras + arme devant la caméra
+	-- Smooth retour du recoil vers zéro (le PivotTo est géré par ViewmodelController)
 	if currentViewModel then
-
-		-- Offset des bras (position fixe devant la caméra)
-		-- X = droite/gauche, Y = haut/bas, Z = avant/arrière (négatif = devant)
-		local armsOffset = CFrame.new(0, -1.8, 0.4)
-
-		-- Appliquer le recul
 		recoilOffset = recoilOffset:Lerp(CFrame.new(0, 0, 0), dt * 15)
-
-		-- Ajouter un léger balancement (Sway)
-		local mouseDelta = UserInputService:GetMouseDelta()
-		swayOffset = swayOffset:Lerp(CFrame.new(-mouseDelta.X/500, mouseDelta.Y/500, 0), dt * 5)
-
-		-- PivotTo déplace les bras + arme à chaque image
-		currentViewModel:PivotTo(workspace.CurrentCamera.CFrame * armsOffset * swayOffset * recoilOffset)
 	end
 end)
 
