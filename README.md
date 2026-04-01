@@ -191,7 +191,41 @@ Le Desert Eagle utilise un **viewmodel custom** (`vblanktemplate deserteagle1`) 
 
 ---
 
+## Test Fe Weapon Kit (echoue -- a refaire)
+
+Un test d'integration du **Fe Weapon Kit** (pack de viewmodel d'armes) a ete tente mais n'a pas abouti. Voici les problemes rencontres et les lecons apprises pour la prochaine tentative :
+
+### Problemes identifies
+1. **Rojo supprime les instances du Fe Kit** : `$ignoreUnknownInstances` ne fonctionne PAS avec `$path`. Quand Rojo gere un dossier via `$path`, il supprime tout ce qu'il ne connait pas (scripts du Fe Kit dans StarterPlayerScripts, dossiers Miscs/Modules/Remotes dans ReplicatedStorage)
+2. **Events incompatibles** : Le Fe Kit utilise des **BindableEvents** (`gunEvent:Fire()`) et **BindableFunctions** (`viewmodelFunction:Invoke()`), pas des RemoteEvents
+3. **Dossiers manquants** : Le Fe Kit a besoin de `ReplicatedStorage.Miscs`, `ReplicatedStorage.Modules`, `ReplicatedStorage.Remotes` que Rojo supprimait
+4. **Scripts framework manquants** : Le Fe Kit installe des scripts dans StarterPlayerScripts (ViewmodelHandler, GunHandler) que Rojo supprimait
+
+### Solution pour la prochaine tentative
+Pour que Rojo coexiste avec le Fe Kit, il faut remplacer les `$path` de dossiers par des `$path` individuels par fichier :
+```json
+"StarterPlayerScripts": {
+  "$className": "StarterPlayerScripts",
+  "$ignoreUnknownInstances": true,
+  "HUDController": { "$path": "src/client/HUDController.client.lua" },
+  "InputController": { "$path": "src/client/InputController.client.lua" },
+  ...
+}
+```
+Cela permet a Rojo de sync ses scripts sans supprimer ceux du Fe Kit.
+
+Il faut aussi :
+- Ajouter `$ignoreUnknownInstances: true` sur `ReplicatedStorage` et `ServerScriptService`
+- Ajouter les BindableEvents/Functions du Fe Kit dans le project.json (`gunEvent`, `gunFunction`, `viewmodelEvent`, `viewmodelFunction`)
+- Desactiver le systeme d'armes custom (InputController, ViewmodelController, ShopManager, WallBuyManager) via un flag `GameConfig.USE_FE_WEAPON_KIT`
+
+### Changement effectue
+- **Arme de spawn changee** : DesertEagle → Pistol (12/48 munitions)
+
+---
+
 ## Prochaines etapes suggerees
+- [ ] **Retenter l'integration du Fe Weapon Kit** (avec la solution $path individuels)
 - [ ] **Corriger l'animation de reload du Desert Eagle** (Motor6D transforms sur parts ancrees)
 - [ ] **Ajuster la position/rotation des bras du Desert Eagle** pour un bon rendu FPS
 - [ ] **Integrer le sway/bobbing** pour le custom viewmodel
