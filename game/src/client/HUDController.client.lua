@@ -88,52 +88,6 @@ local function createHUD()
 	moneyLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 	moneyLabel.Parent = screenGui
 
-	-- === MUNITIONS (bas-droite) ===
-	local ammoFrame = Instance.new("Frame")
-	ammoFrame.Name = "AmmoFrame"
-	ammoFrame.Size = UDim2.new(0, 200, 0, 50)
-	ammoFrame.Position = UDim2.new(1, -220, 1, -70)
-	ammoFrame.BackgroundTransparency = 1
-	ammoFrame.Parent = screenGui
-
-	local weaponLabel = Instance.new("TextLabel")
-	weaponLabel.Name = "WeaponLabel"
-	weaponLabel.Size = UDim2.new(1, 0, 0.4, 0)
-	weaponLabel.BackgroundTransparency = 1
-	weaponLabel.Text = "Pistolet"
-	weaponLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-	weaponLabel.Font = Enum.Font.GothamBold
-	weaponLabel.TextSize = 14
-	weaponLabel.TextXAlignment = Enum.TextXAlignment.Right
-	weaponLabel.Parent = ammoFrame
-
-	local ammoLabel = Instance.new("TextLabel")
-	ammoLabel.Name = "AmmoLabel"
-	ammoLabel.Size = UDim2.new(1, 0, 0.6, 0)
-	ammoLabel.Position = UDim2.new(0, 0, 0.4, 0)
-	ammoLabel.BackgroundTransparency = 1
-	ammoLabel.Text = "12 / 48"
-	ammoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	ammoLabel.Font = Enum.Font.GothamBlack
-	ammoLabel.TextSize = 24
-	ammoLabel.TextXAlignment = Enum.TextXAlignment.Right
-	ammoLabel.TextStrokeTransparency = 0.3
-	ammoLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-	ammoLabel.Parent = ammoFrame
-
-	-- Hint de rechargement
-	local reloadHint = Instance.new("TextLabel")
-	reloadHint.Name = "ReloadHint"
-	reloadHint.Size = UDim2.new(1.5, 0, 0.4, 0)
-	reloadHint.Position = UDim2.new(-0.25, 0, -0.4, 0)
-	reloadHint.BackgroundTransparency = 1
-	reloadHint.Text = "Appuyer sur R pour recharger"
-	reloadHint.TextColor3 = Color3.fromRGB(255, 50, 50) -- Rouge alerte
-	reloadHint.Font = Enum.Font.GothamBold
-	reloadHint.TextSize = 14
-	reloadHint.Visible = false
-	reloadHint.Parent = ammoFrame
-
 	-- === NOTIFICATION (centre) ===
 	local notifLabel = Instance.new("TextLabel")
 	notifLabel.Name = "NotifLabel"
@@ -326,16 +280,6 @@ end)
 
 Events:WaitForChild("UpdateHealth").OnClientEvent:Connect(function(hp, maxHp)
 	updateHealth(hp, maxHp)
-end)
-
-Events:WaitForChild("UpdateAmmo").OnClientEvent:Connect(function(current, reserve, weaponName)
-	local ammoFrame = hud:FindFirstChild("AmmoFrame")
-	if ammoFrame then
-		local ammoLabel = ammoFrame:FindFirstChild("AmmoLabel")
-		local weapLabel = ammoFrame:FindFirstChild("WeaponLabel")
-		if ammoLabel then ammoLabel.Text = current .. " / " .. reserve end
-		if weapLabel then weapLabel.Text = weaponName or "" end
-	end
 end)
 
 Events:WaitForChild("ShowNotification").OnClientEvent:Connect(function(text, color, duration)

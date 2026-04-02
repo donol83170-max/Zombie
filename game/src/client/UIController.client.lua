@@ -11,7 +11,6 @@ local playerGui = player:WaitForChild("PlayerGui")
 local Events = ReplicatedStorage:WaitForChild("Events")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local ClassConfig = require(Shared:WaitForChild("ClassConfig"))
-local WeaponConfig = require(Shared:WaitForChild("WeaponConfig"))
 local GameConfig = require(Shared:WaitForChild("GameConfig"))
 local Constants = require(Shared:WaitForChild("Constants"))
 
@@ -128,7 +127,7 @@ local function createClassSelectionUI()
 			-- Cacher le curseur de la souris pour le gameplay FPS
 			local UserInputService = game:GetService("UserInputService")
 			UserInputService.MouseIconEnabled = false
-			player.CameraMode = Enum.CameraMode.LockFirstPerson
+			player.CameraMode = Enum.CameraMode.Classic
 			
 			-- Fermer l'UI
 			TweenService:Create(bg, TweenInfo.new(0.3), {

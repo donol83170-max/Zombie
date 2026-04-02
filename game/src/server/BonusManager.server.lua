@@ -8,13 +8,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Events = ReplicatedStorage:WaitForChild("Events")
 local GameConfig = require(Shared:WaitForChild("GameConfig"))
-local WeaponConfig = require(Shared:WaitForChild("WeaponConfig"))
 local Constants = require(Shared:WaitForChild("Constants"))
 
 local WaveCompleted = Events:WaitForChild("WaveCompleted")
 local ShowNotification = Events:WaitForChild("ShowNotification")
 local BonusActivated = Events:WaitForChild("BonusActivated")
-local UpdateAmmo = Events:WaitForChild("UpdateAmmo")
 local UpdateHealth = Events:WaitForChild("UpdateHealth")
 
 -- === FONCTIONS BONUS ===
@@ -73,17 +71,26 @@ local function applyBonus(bonusType)
 		ShowNotification:FireAllClients(displayName, "#00FF00", 3)
 
 	elseif bonusType == "AmmoDrop" then
-		-- Recharge complète pour tous
+		-- Recharge complète : recharge les outils du backpack via le Fe Weapon Kit
 		for _, player in ipairs(Players:GetPlayers()) do
-			local sessionData = player:FindFirstChild("SessionData")
-			if sessionData then
-				local weaponName = sessionData:FindFirstChild("WeaponName")
-				if weaponName then
-					local weaponData = WeaponConfig.Weapons[weaponName.Value]
-					if weaponData then
-						sessionData.CurrentAmmo.Value = weaponData.magSize
-						sessionData.ReserveAmmo.Value = weaponData.reserveAmmo
-						UpdateAmmo:FireClient(player, weaponData.magSize, weaponData.reserveAmmo, weaponData.displayName)
+			local backpack = player:FindFirstChild("Backpack")
+			local char = player.Character
+			if backpack then
+				-- Recharger les armes dans le backpack et équipées
+				local tools = {}
+				for _, tool in ipairs(backpack:GetChildren()) do
+					if tool:IsA("Tool") then table.insert(tools, tool) end
+				end
+				if char then
+					for _, tool in ipairs(char:GetChildren()) do
+						if tool:IsA("Tool") then table.insert(tools, tool) end
+					end
+				end
+				for _, tool in ipairs(tools) do
+					local ammoVal = tool:FindFirstChild("Ammo") or tool:FindFirstChild("CurrentAmmo")
+					local maxAmmo = tool:FindFirstChild("MaxAmmo") or tool:FindFirstChild("MagSize")
+					if ammoVal and maxAmmo then
+						ammoVal.Value = maxAmmo.Value
 					end
 				end
 			end

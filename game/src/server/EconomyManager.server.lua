@@ -130,21 +130,8 @@ DamageZombie.OnServerEvent:Connect(function(player, zombieModel, isHeadshot, wea
 	
 	print(string.format("[EconomyManager] HIT VALIDÉ ! Zombie: %s | Vie: %.1f", zombieModel.Name, humanoid.Health))
 
-	local WeaponConfig = require(Shared:WaitForChild("WeaponConfig"))
-	local wData = WeaponConfig.Weapons[weaponName]
-	if not wData then return end
-	
-	-- Calcul des dégâts
-	local damage = wData.damage
-	if isHeadshot then
-		damage *= (wData.headshotMult or 2)
-	end
-	
-	-- Appliquer rigoureusement côté serveur
-	humanoid:TakeDamage(damage)
-	
-	-- Donner la récompense d'impact (seulement s'il n'était pas déjà mort juste avant cet impact)
-	-- $50 pour un tir dans la tête, $10 pour un tir dans le corps
+	-- Récompense d'impact : $50 headshot, $10 body
+	-- Les dégâts sont gérés par le système d'armes (Fe Weapon Kit)
 	local reward = isHeadshot and 50 or 10
 	EconomyManager.addMoney(player, reward)
 end)

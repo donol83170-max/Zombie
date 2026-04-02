@@ -7,12 +7,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Events = ReplicatedStorage:WaitForChild("Events")
-local WeaponConfig = require(Shared:WaitForChild("WeaponConfig"))
 local GameConfig = require(Shared:WaitForChild("GameConfig"))
 
 local RequestBuyShopItem = Events:WaitForChild("RequestBuyShopItem")
 local ShowNotification = Events:WaitForChild("ShowNotification")
-local UpdateAmmo = Events:WaitForChild("UpdateAmmo")
 local UpdateHealth = Events:WaitForChild("UpdateHealth")
 
 task.wait(1) -- Attendre EconomyManager
@@ -37,43 +35,38 @@ local ShopItems = {
 -- === ACHAT ===
 
 local function buyWeapon(player, weaponId)
-	local weaponData = WeaponConfig.Weapons[weaponId]
-	if not weaponData then return false, "Arme introuvable" end
+	-- Trouver le prix dans le catalogue
+	local itemConfig = nil
+	for _, item in ipairs(ShopItems) do
+		if item.id == weaponId and item.type == "weapon" then
+			itemConfig = item
+			break
+		end
+	end
+	if not itemConfig then return false, "Arme introuvable" end
 
 	local economy = _G.EconomyManager
 	if not economy then return false, "Système économique indisponible" end
 
-	if weaponData.price > 0 and not economy.canAfford(player, weaponData.price) then
+	if itemConfig.price > 0 and not economy.canAfford(player, itemConfig.price) then
 		return false, "Fonds insuffisants"
 	end
 
-	if weaponData.price > 0 then
-		economy.removeMoney(player, weaponData.price)
+	if itemConfig.price > 0 then
+		economy.removeMoney(player, itemConfig.price)
 	end
 
-	-- Donner l'arme (et la sauvegarder comme arme primaire)
-	local sessionData = player:FindFirstChild("SessionData")
-	if sessionData then
-		sessionData.WeaponName.Value = weaponId
-		sessionData.CurrentAmmo.Value = weaponData.magSize
-		sessionData.ReserveAmmo.Value = weaponData.reserveAmmo
-		-- Sauvegarder comme arme primaire
-		if sessionData:FindFirstChild("PrimaryWeaponName") then
-			sessionData.PrimaryWeaponName.Value = weaponId
-		end
-		if sessionData:FindFirstChild("PrimaryAmmo") then
-			sessionData.PrimaryAmmo.Value = weaponData.magSize
-		end
-		if sessionData:FindFirstChild("PrimaryReserve") then
-			sessionData.PrimaryReserve.Value = weaponData.reserveAmmo
-		end
-		if sessionData:FindFirstChild("ActiveSlot") then
-			sessionData.ActiveSlot.Value = 1
+	-- Donner l'arme via le Backpack (compatible Fe Weapon Kit)
+	local weaponTemplates = game.ServerStorage:FindFirstChild("WeaponTemplates")
+	if weaponTemplates then
+		local tool = weaponTemplates:FindFirstChild(weaponId)
+		if tool then
+			local clone = tool:Clone()
+			clone.Parent = player.Backpack
 		end
 	end
 
-	UpdateAmmo:FireClient(player, weaponData.magSize, weaponData.reserveAmmo, weaponData.displayName)
-	return true, weaponData.displayName
+	return true, weaponId
 end
 
 local function buyConsumable(player, itemId)

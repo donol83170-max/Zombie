@@ -8,12 +8,21 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Events = ReplicatedStorage:WaitForChild("Events")
-local WeaponConfig = require(Shared:WaitForChild("WeaponConfig"))
 local GameConfig = require(Shared:WaitForChild("GameConfig"))
 
 local ShowNotification = Events:WaitForChild("ShowNotification")
-local UpdateAmmo = Events:WaitForChild("UpdateAmmo")
 local UpdateMoney = Events:WaitForChild("UpdateMoney")
+
+-- Prix et noms des armes (remplace l'ancien WeaponConfig)
+local WallBuyPrices = {
+	Pistol       = { price = 250,  displayName = "Pistolet" },
+	SMG          = { price = 800,  displayName = "SMG" },
+	Shotgun      = { price = 1500, displayName = "Shotgun" },
+	AK47         = { price = 2500, displayName = "AK-47" },
+	Sniper       = { price = 4000, displayName = "Sniper" },
+	Flamethrower = { price = 6000, displayName = "Lance-flammes" },
+	SIGSAUERP250 = { price = 500,  displayName = "SIG Sauer P250" },
+}
 
 -- Attendre que EconomyManager soit disponible
 task.wait(1)
@@ -21,9 +30,9 @@ task.wait(1)
 -- === SETUP D'UN WALL BUY ===
 
 local function setupWallBuy(object, weaponId)
-	local weaponData = WeaponConfig.Weapons[weaponId]
+	local weaponData = WallBuyPrices[weaponId]
 	if not weaponData then
-		warn("[WallBuy] Arme introuvable: " .. weaponId .. " (objet: " .. object.Name .. ")")
+		warn("[WallBuy] Arme introuvable dans WallBuyPrices: " .. weaponId .. " (objet: " .. object.Name .. ")")
 		return
 	end
 
@@ -57,36 +66,25 @@ local function setupWallBuy(object, weaponId)
 			if weaponData.price > 0 then
 				local success = economy.removeMoney(player, weaponData.price)
 				if not success then
-					ShowNotification:FireClient(player, "💸 Fonds insuffisants !", "#FF0000", 2)
+					ShowNotification:FireClient(player, "Fonds insuffisants !", "#FF0000", 2)
 					return
 				end
 			end
 
-			local sessionData = player:FindFirstChild("SessionData")
-			if sessionData then
-				sessionData.WeaponName.Value = weaponId
-				sessionData.CurrentAmmo.Value = weaponData.magSize
-				sessionData.ReserveAmmo.Value = weaponData.reserveAmmo
-				if sessionData:FindFirstChild("PrimaryWeaponName") then
-					sessionData.PrimaryWeaponName.Value = weaponId
-				end
-				if sessionData:FindFirstChild("PrimaryAmmo") then
-					sessionData.PrimaryAmmo.Value = weaponData.magSize
-				end
-				if sessionData:FindFirstChild("PrimaryReserve") then
-					sessionData.PrimaryReserve.Value = weaponData.reserveAmmo
-				end
-				if sessionData:FindFirstChild("ActiveSlot") then
-					sessionData.ActiveSlot.Value = 1
+			-- Donner l'arme via le Backpack (compatible Fe Weapon Kit)
+			local weaponTemplate = game.ServerStorage:FindFirstChild("WeaponTemplates")
+			if weaponTemplate then
+				local tool = weaponTemplate:FindFirstChild(weaponId)
+				if tool then
+					local clone = tool:Clone()
+					clone.Parent = player.Backpack
 				end
 			end
 
-			UpdateAmmo:FireClient(player, weaponData.magSize, weaponData.reserveAmmo, weaponData.displayName)
-			ShowNotification:FireClient(player, "🔫 " .. weaponData.displayName .. " acheté !", "#00FF00", 2)
-
+			ShowNotification:FireClient(player, weaponData.displayName .. " acheté !", "#00FF00", 2)
 			print("[WallBuy] " .. player.Name .. " a acheté " .. weaponData.displayName)
 		else
-			ShowNotification:FireClient(player, "💸 Fonds insuffisants !", "#FF0000", 2)
+			ShowNotification:FireClient(player, "Fonds insuffisants !", "#FF0000", 2)
 		end
 	end)
 

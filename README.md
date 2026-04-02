@@ -2,46 +2,20 @@
 
 ## Ce qui est implemente et fonctionnel
 
-### Systeme de Combat (FPS)
-- **Tir raycast** depuis la tete du joueur -- les balles traversent le brouillard et les decors transparents
-- **Arme exclue du raycast** -- les balles ne touchent plus le modele 3D de l'arme
-- **Muzzle Flash** -- le flash sort du bout du canon (attachement `MuzzleFlash` dans `Handle`)
-- **Recul + Balancement** (Sway) de l'arme a chaque tir
-- **Hitmarker sonore** quand un zombie est touche
-- **Rechargement** : touche `R` a tout moment, hint "Appuyer sur R" quand le chargeur est vide
-
-### Bras FPS (VMTemplate)
-- **Nouveau modele de bras realiste** (VMTemplate) avec Humanoid, Body Colors et Shirt
-- Les bras suivent la camera avec recul et sway
-- Le modele "VMTemplate" est dans `ReplicatedStorage/Weapons/VMTemplate`
-- Chaque arme est attachee au **RightGripAttachment** du `Right Arm` avec rotation et offset configurables
-- Camera et ThumbnailCamera du modele sont supprimes automatiquement en jeu (preview Studio uniquement)
-- Position de la camera FPS optimisee (bras descendus et recules pour un meilleur rendu)
-- **Fix collision** : le Humanoid du ViewModel est desactive (EvaluateStateMachine = false) et toutes les parts sont en CanCollide/CanQuery/CanTouch = false pour eviter les collisions fantomes
-
-### Systeme de Slots (Switch d'armes)
-- **Touche 1** : equipe l'arme primaire (pistolet par defaut, ou celle achetee)
-- **Touche 2** : equipe le couteau (melee)
-- Les munitions de l'arme primaire sont sauvegardees lors du switch
-- Animation de switch avec delai de 0.3s
-- Achat d'arme (shop ou wall buy) met a jour automatiquement le slot primaire
-
-### Couteau (KNIFE)
-- **35 degats**, mode melee, pas de munitions
-- Portee courte (8 studs)
-- Animation de slash vers l'avant au lieu du recul
-- Rotation et position configurables via `fpsRotation` et `gripOffset` dans WeaponConfig
-- Le HUD affiche "---" au lieu des munitions
+### Systeme d'armes (Fe Weapon Kit)
+- **Nouveau systeme d'armes** base sur le Fe Weapon Kit (remplace l'ancien systeme custom)
+- Les armes, le viewmodel (bras FPS), les animations de tir et reload sont geres par le Fe Kit
+- Les armes sont des Tools dans le Backpack du joueur
+- BindableEvents (`gunEvent`, `viewmodelEvent`) et BindableFunctions (`gunFunction`, `viewmodelFunction`) dans ReplicatedStorage.Events
 
 ### Economie (Serveur-Autoritaire)
-- **+10$** par tir au corps
-- **+50$** par tir a la tete
+- **Reward par kill** : argent donne au joueur le plus proche quand un zombie meurt
+- **DamageZombie event** : conserve pour bridge futur entre Fe Kit et economie serveur
 - Validation cote serveur -- anti-triche
-- Fonctionne avec **tous les modeles de zombies** de la Toolbox (recherche recursive du Humanoid)
+- Multiplicateur de classe et bonus double argent
 
 ### Zombies
 - Nom obligatoire : `Enemy_XYZ` (ex : `Enemy_Basic`, `Enemy_Boss`)
-- Les degats sont appliques via `HumanoidRootPart:TakeDamage()`
 - Vie evolutive selon la manche (config dans `ZombieConfig.lua`)
 - Types : Basic (100 HP), Rapide (50 HP), Tank (500 HP), Explosif (75 HP), Boss (2000 HP)
 
@@ -49,36 +23,46 @@
 - **Placement libre** : place n'importe quel modele ou objet dans le dossier `WallBuys` de Workspace
 - **Nommage simple** : renomme l'objet en `WallBuy_NomArme` (ex : `WallBuy_Pistol`, `WallBuy_AK47`)
 - Le script detecte automatiquement l'objet et ajoute le **ProximityPrompt** d'achat avec nom + prix
-- Plus de texte flottant (BillboardGui) : tout est affiche directement dans le **ProximityPrompt**
-- Fonctionne avec des **Parts** et des **Models** (cherche la PrimaryPart ou la premiere Part)
+- Fonctionne avec des **Parts** et des **Models**
 - Detection dynamique : les wall buys ajoutes en cours de jeu sont detectes aussi
-- Nettoyage automatique des espaces dans les noms
-- **Astuce visuel** : ajouter un **Highlight** sur le modele (OutlineColor blanc, FillTransparency 1) pour un effet contour lumineux style COD
+- Achat = clone l'arme depuis ServerStorage/WeaponTemplates dans le Backpack du joueur
+- Prix configures dans `WallBuyPrices` (table inline dans WallBuyManager)
 
 ### Portail Interactif
-- **Touche E** pour ouvrir/fermer le portail
-- **Coute $1500** pour ouvrir (ouverture definitive, ne peut pas etre refermee)
+- **Touche E** pour ouvrir le portail
+- **Coute $1500** pour ouvrir (ouverture definitive)
 - Les deux battants s'ouvrent avec une animation fluide (TweenService, 1.5s)
 - ProximityPrompt centre sur le portail avec affichage du prix
-- Fonctionne avec n'importe quel Model nomme "Gate" contenant "DoorCLoseL" et "DoorCloseR"
+- Fonctionne avec n'importe quel Model nomme "Gate" contenant "DoorCloseL" et "DoorCloseR"
 - **Positions relatives** : deplacer le portail dans Studio ne casse rien
 
+### HUD
+- **Barre de vie** (haut-gauche) avec couleur dynamique (vert/orange/rouge)
+- **Numero de manche** (haut-centre)
+- **Argent** (bas-gauche)
+- **Barre de vie du boss** (sous la manche, visible uniquement pendant un boss)
+- **Notifications** (centre, avec animation de scale + fade)
+- **Flash de degats** (ecran rouge quand le joueur est touche)
+- **Ecran Game Over** avec stats (manche, kills, argent)
+
+### Boutique (ShopManager)
+- Catalogue : armes + consommables (Shield, Speed, Grenade)
+- Achat d'armes = clone depuis ServerStorage/WeaponTemplates
+- Consommables : bouclier (ForceField 30s), vitesse x2 (30s), grenade (explosion AOE)
+
+### Bonus de manche (BonusManager)
+- Bonus aleatoire apres chaque manche
+- Types : DoubleMoney, HealAll, AmmoDrop, SpeedBoost, Nuke
+- AmmoDrop recharge les valeurs Ammo des Tools dans le Backpack
+
+### Selection de classe
+- UI de selection au debut de la partie
+- Classes configurees dans `ClassConfig.lua`
+
 ### Map & Decor
-- Les objets de decor transparents (brouillard, effets visuels) ne bloquent plus les balles
-- Collision correcte : le joueur peut traverser les decors non-solides
 - Map "lucas 2" avec portail
-
-### Armes disponibles
-
-| Arme | Prix | Degats | Cadence | Chargeur | Portee |
-|------|------|--------|---------|----------|--------|
-| Couteau | 0$ | 35 | 120 RPM | -- | 8 |
-| Pistolet | 250$ | 15 | 300 RPM | 12 | 100 |
-| SMG | 800$ | 12 | 600 RPM | 30 | 80 |
-| Shotgun | 1500$ | 50x8 | 90 RPM | 8 | 30 |
-| AK-47 | 2500$ | 25 | 450 RPM | 30 | 120 |
-| Sniper | 4000$ | 100 | 40 RPM | 5 | 300 |
-| Lance-flammes | 6000$ | 8/tick | continu | 100 | 25 |
+- Spawn aleatoire de zombies sur la Map 1
+- Murs invisibles
 
 ---
 
@@ -86,62 +70,56 @@
 
 | Fichier | Role |
 |---------|------|
-| `src/client/InputController.client.lua` | Tir, rechargement, switch d'armes, bras FPS, raycast |
-| `src/server/EconomyManager.server.lua` | Degats + argent (serveur autoritaire) |
+| `src/client/HUDController.client.lua` | HUD : vie, argent, manche, boss HP, notifications |
+| `src/client/UIController.client.lua` | Selection de classe, menus |
+| `src/server/EconomyManager.server.lua` | Argent, rewards (serveur autoritaire) |
 | `src/server/GameInit.server.lua` | Init joueur : armes, slots, munitions |
 | `src/server/ShopManager.server.lua` | Boutique : armes, consommables |
-| `src/server/WallBuyManager.server.lua` | Achat d'armes aux murs (detection auto des modeles) |
+| `src/server/WallBuyManager.server.lua` | Achat d'armes aux murs (detection auto) |
 | `src/server/GateManager.server.lua` | Portails interactifs (ouverture/fermeture) |
-| `src/client/HUDController.client.lua` | HUD : vie, argent, manche, munitions |
-| `src/shared/WeaponConfig.lua` | Config armes (degats, cadence, prix, rotation, offset) |
+| `src/server/BonusManager.server.lua` | Bonus aleatoires apres chaque manche |
+| `src/server/WaveManager.server.lua` | Gestion des manches et spawn de zombies |
+| `src/server/BossManager.server.lua` | Spawn et gestion des boss |
+| `src/shared/GameConfig.lua` | Config globale du jeu |
+| `src/shared/ClassConfig.lua` | Config des classes joueur |
 | `src/shared/ZombieConfig.lua` | Config zombies (PV, vitesse, recompense) |
+| `src/shared/Constants.lua` | Constantes du jeu |
 
 ---
 
-## Utilisation de `muzzle_fix.lua`
+## Bugs connus / A corriger
 
-Si le flash de ton arme ne part pas du bout du canon :
-1. Copie le contenu de `game/muzzle_fix.lua`
-2. Colle-le dans la **Barre de commande** de Roblox Studio
-3. Appuie sur **Entree**
-4. Relance le jeu (F5)
-
----
-
-## Guide pour ton frere (Collaboration)
-
-Pour que ton frere puisse travailler sur le jeu, il doit suivre ces etapes :
-
-1. **Telecharger le projet** : Il doit faire un `git clone` du depot GitHub sur son ordinateur.
-2. **Ouvrir le jeu** : Il doit ouvrir le fichier **`Zombies Waves.rbxl`** qui se trouve a la racine du dossier. C'est la map et tous les objets du jeu.
-3. **Installer Rojo** :
-   - Il doit avoir l'extension Rojo dans son Visual Studio Code.
-   - Il doit avoir le plugin Rojo dans son Roblox Studio.
-4. **Synchroniser le code** :
-   - Dans un terminal (dans le dossier `game/`), il tape : `rojo serve`
-   - Dans Roblox Studio, il clique sur le bouton **Connect** du plugin Rojo.
-5. **Travailler ensemble** :
-   - Quand il change un script, il doit faire un `git commit` et `git push`.
-   - Toi, tu devras faire un `git pull` pour voir ses changements, et vice-versa !
+- [ ] **Argent ne se gagne pas** : le Fe Weapon Kit ne fire pas `DamageZombie`, donc pas de reward par tir. Le reward par kill (zombie mort) necessite verification (Rojo doit etre sync)
+- [ ] **Rojo doit etre connecte** pour que les modifs code soient actives dans Studio
+- [ ] **Animations** : les animations importees doivent etre publiees sous le meme compte/groupe que le proprietaire du jeu (restriction Roblox)
+- [ ] **Camera potentiellement lockee** : verifier StarterPlayer.CameraMode dans le .rbxl
 
 ---
 
-## Comment ajouter un Wall Buy sur la map
+## Collaboration (2 joueurs)
 
-1. Dans Roblox Studio, ouvre le dossier `WallBuys` dans Workspace (il est cree automatiquement)
-2. Place le modele ou objet de ton choix dans ce dossier
-3. Renomme-le en `WallBuy_NomArme` :
-   - `WallBuy_Pistol` (250$)
-   - `WallBuy_SMG` (800$)
-   - `WallBuy_Shotgun` (1500$)
-   - `WallBuy_AK47` (2500$)
-   - `WallBuy_Sniper` (4000$)
-   - `WallBuy_Flamethrower` (6000$)
-4. Anchor toutes les Parts du modele (Anchored = true)
-5. (Optionnel) Ajoute un **Highlight** pour un effet contour lumineux :
-   - Insert Object > Highlight
-   - OutlineColor = Blanc
-   - FillTransparency = 1
+Le jeu est developpe a deux (freres). Pour eviter les problemes de permissions sur les animations :
+- **Creer un Groupe Roblox** (via roblox.com > Communautes)
+- **Transferer le jeu au groupe**
+- **Publier toutes les animations sous le groupe** (pas sous un compte perso)
+
+Pour synchroniser le code :
+1. `git clone` du depot
+2. Ouvrir `Zombies Waves.rbxl` dans Roblox Studio
+3. `rojo serve game/default.project.json` dans le terminal
+4. Connecter le plugin Rojo dans Studio
+5. `git commit` + `git push` / `git pull` pour partager les changements
+
+---
+
+## Ce qui a ete supprime (ancien systeme)
+
+Les fichiers suivants ont ete supprimes car remplaces par le Fe Weapon Kit :
+- `InputController.client.lua` -- ancien systeme de tir, raycast, rechargement, switch, viewmodel
+- `ViewmodelController.client.lua` -- ancien systeme de bobbing, sway, tilt
+- `WeaponConfig.lua` -- ancienne config des armes (degats, RPM, portee...)
+
+Le HUD a ete nettoye : suppression de l'affichage munitions (AmmoFrame), du hint de reload, et du listener UpdateAmmo. L'event UpdateAmmo a ete retire du project.json.
 
 ---
 
@@ -154,84 +132,10 @@ Puis connecte le plugin **Rojo** dans Roblox Studio.
 
 ---
 
-## Systeme de Custom Viewmodel (Desert Eagle)
-
-Le Desert Eagle utilise un **viewmodel custom** (`vblanktemplate deserteagle1`) ou l'arme et les bras sont integres dans un seul modele, contrairement au systeme standard (VMTemplate + arme separee).
-
-### Comment ca marche
-- `WeaponConfig.lua` : le champ `customViewModel` pointe vers le modele dans `ReplicatedStorage/Weapons`
-- `WeaponConfig.lua` : le champ `reloadAnimId` contient l'ID de l'animation de reload
-- `InputController` : detecte `customViewModel` et clone le modele complet au lieu de VMTemplate + arme
-- `InputController` : cree un Humanoid + Animator pour jouer les animations
-- `ViewmodelController` : applique les transforms Motor6D apres PivotTo pour les animations
-
-### Problemes connus (a corriger)
-- **Animation de reload ne se joue pas visuellement** : l'animation est chargee et `Play()` est appele, mais les Motor6D transforms ne semblent pas se repercuter sur les parts ancrees. Il faut investiguer si l'Animator met bien a jour `Motor6D.Transform` sur des parts ancrees, ou trouver une autre methode de positionnement compatible avec les animations.
-- **Position des bras** : le custom viewmodel utilise un offset different (`CFrame.new(0, -1.8, -3.5)`) du viewmodel standard (`CFrame.new(0, -1.8, 0.4)`) car le modele avait un probleme de clipping camera. Il faudra ajuster la position/rotation pour un meilleur rendu FPS.
-- **Pas de sway/bobbing** : le custom viewmodel est positionne depuis InputController (pas ViewmodelController) donc il n'a pas le sway souris, le bobbing de marche, etc. Il faudra integrer le positionnement dans ViewmodelController.
-
-### Ajouter une nouvelle arme avec custom viewmodel
-1. Creer le modele de bras + arme dans Studio (avec Motor6Ds pour les joints)
-2. Creer les animations dans l'Animation Editor et les publier sur Roblox
-3. Placer le modele dans `ReplicatedStorage/Weapons/NomDuModele`
-4. Ajouter l'arme dans `WeaponConfig.lua` avec `customViewModel` et `reloadAnimId`
-
----
-
-| Arme | Prix | Degats | Cadence | Chargeur | Portee |
-|------|------|--------|---------|----------|--------|
-| Couteau | 0$ | 35 | 120 RPM | -- | 8 |
-| Pistolet | 250$ | 15 | 300 RPM | 12 | 100 |
-| **Desert Eagle** | **500$** | **50** | **120 RPM** | **6** | **120** |
-| SMG | 800$ | 12 | 600 RPM | 30 | 80 |
-| Shotgun | 1500$ | 50x8 | 90 RPM | 8 | 30 |
-| AK-47 | 2500$ | 25 | 450 RPM | 30 | 120 |
-| Sniper | 4000$ | 100 | 40 RPM | 5 | 300 |
-| Lance-flammes | 6000$ | 8/tick | continu | 100 | 25 |
-
----
-
-## Test Fe Weapon Kit (echoue -- a refaire)
-
-Un test d'integration du **Fe Weapon Kit** (pack de viewmodel d'armes) a ete tente mais n'a pas abouti. Voici les problemes rencontres et les lecons apprises pour la prochaine tentative :
-
-### Problemes identifies
-1. **Rojo supprime les instances du Fe Kit** : `$ignoreUnknownInstances` ne fonctionne PAS avec `$path`. Quand Rojo gere un dossier via `$path`, il supprime tout ce qu'il ne connait pas (scripts du Fe Kit dans StarterPlayerScripts, dossiers Miscs/Modules/Remotes dans ReplicatedStorage)
-2. **Events incompatibles** : Le Fe Kit utilise des **BindableEvents** (`gunEvent:Fire()`) et **BindableFunctions** (`viewmodelFunction:Invoke()`), pas des RemoteEvents
-3. **Dossiers manquants** : Le Fe Kit a besoin de `ReplicatedStorage.Miscs`, `ReplicatedStorage.Modules`, `ReplicatedStorage.Remotes` que Rojo supprimait
-4. **Scripts framework manquants** : Le Fe Kit installe des scripts dans StarterPlayerScripts (ViewmodelHandler, GunHandler) que Rojo supprimait
-
-### Solution pour la prochaine tentative
-Pour que Rojo coexiste avec le Fe Kit, il faut remplacer les `$path` de dossiers par des `$path` individuels par fichier :
-```json
-"StarterPlayerScripts": {
-  "$className": "StarterPlayerScripts",
-  "$ignoreUnknownInstances": true,
-  "HUDController": { "$path": "src/client/HUDController.client.lua" },
-  "InputController": { "$path": "src/client/InputController.client.lua" },
-  ...
-}
-```
-Cela permet a Rojo de sync ses scripts sans supprimer ceux du Fe Kit.
-
-Il faut aussi :
-- Ajouter `$ignoreUnknownInstances: true` sur `ReplicatedStorage` et `ServerScriptService`
-- Ajouter les BindableEvents/Functions du Fe Kit dans le project.json (`gunEvent`, `gunFunction`, `viewmodelEvent`, `viewmodelFunction`)
-- Desactiver le systeme d'armes custom (InputController, ViewmodelController, ShopManager, WallBuyManager) via un flag `GameConfig.USE_FE_WEAPON_KIT`
-
-### Changement effectue
-- **Arme de spawn changee** : DesertEagle → Pistol (12/48 munitions)
-
----
-
 ## Prochaines etapes suggerees
-- [ ] **Retenter l'integration du Fe Weapon Kit** (avec la solution $path individuels)
-- [ ] **Corriger l'animation de reload du Desert Eagle** (Motor6D transforms sur parts ancrees)
-- [ ] **Ajuster la position/rotation des bras du Desert Eagle** pour un bon rendu FPS
-- [ ] **Integrer le sway/bobbing** pour le custom viewmodel
-- [ ] Animation de tir Desert Eagle
-- [ ] Animations de bras (idle, tir, rechargement) pour les autres armes
-- [ ] Animation de marche zombie
+- [ ] **Creer un Groupe Roblox** pour regler les permissions d'animations
+- [ ] **Connecter le Fe Kit a l'economie** : fire `DamageZombie` depuis le Fe Kit pour gagner de l'argent par tir
+- [ ] **Verifier le reward par kill** : tester que l'argent est bien donne quand un zombie meurt
 - [ ] Perks (Juggernog, Speed Cola, Double Tap...)
 - [ ] Pack-a-Punch (amelioration d'armes)
 - [ ] Nouvelles armes avec leurs modeles 3D
