@@ -7,6 +7,7 @@
 - Les armes, le viewmodel (bras FPS), les animations de tir et reload sont geres par le Fe Kit
 - Les armes sont des Tools dans le Backpack du joueur
 - BindableEvents (`gunEvent`, `viewmodelEvent`) et BindableFunctions (`gunFunction`, `viewmodelFunction`) dans ReplicatedStorage.Events
+- **WeaponConfig.lua** restaure dans `src/shared/` : table des armes (degats, RPM, portee, prix, sons)
 
 ### Economie (Serveur-Autoritaire)
 - **Reward par kill** : argent donne au joueur le plus proche quand un zombie meurt
@@ -71,7 +72,7 @@
 | Fichier | Role |
 |---------|------|
 | `src/client/HUDController.client.lua` | HUD : vie, argent, manche, boss HP, notifications |
-| `src/client/UIController.client.lua` | Selection de classe, menus |
+| `src/client/UIController.client.lua` | Selection de classe, menus, camera LockFirstPerson |
 | `src/server/EconomyManager.server.lua` | Argent, rewards (serveur autoritaire) |
 | `src/server/GameInit.server.lua` | Init joueur : armes, slots, munitions |
 | `src/server/ShopManager.server.lua` | Boutique : armes, consommables |
@@ -83,16 +84,30 @@
 | `src/shared/GameConfig.lua` | Config globale du jeu |
 | `src/shared/ClassConfig.lua` | Config des classes joueur |
 | `src/shared/ZombieConfig.lua` | Config zombies (PV, vitesse, recompense) |
+| `src/shared/WeaponConfig.lua` | Config des armes (degats, RPM, portee, prix, sons) |
 | `src/shared/Constants.lua` | Constantes du jeu |
 
 ---
 
-## Bugs connus / A corriger
+## Configuration Rojo (default.project.json)
 
-- [ ] **Argent ne se gagne pas** : le Fe Weapon Kit ne fire pas `DamageZombie`, donc pas de reward par tir. Le reward par kill (zombie mort) necessite verification (Rojo doit etre sync)
-- [ ] **Rojo doit etre connecte** pour que les modifs code soient actives dans Studio
-- [ ] **Animations** : les animations importees doivent etre publiees sous le meme compte/groupe que le proprietaire du jeu (restriction Roblox)
-- [ ] **Camera potentiellement lockee** : verifier StarterPlayer.CameraMode dans le .rbxl
+- `$ignoreUnknownInstances: true` sur **ServerScriptService** et **StarterPlayerScripts** : empeche Rojo de supprimer les scripts du Fe Weapon Kit lors du sync
+- `$ignoreUnknownInstances: true` sur ServerStorage, StarterGui, Workspace : protege les assets du .rbxl
+
+---
+
+## Bug en cours
+
+- [ ] **Animation idle du gun ne se joue pas** : l'animation est chargee et tourne (visible dans GetPlayingAnimationTracks) mais les animations par defaut de Roblox (idle, toolnone) l'ecrasent visuellement car elles ont la meme priorite (Core). Fonctionne sur une autre experience avec le meme Fe Kit — a investiguer (possiblement le script Animate par defaut qui differe)
+- [ ] **Erreur ProjectileHandler:519** : `argument #1 expects a string, but EnumItem was passed` dans MakeImpactFX — fix : `hitResult.Material.Name` au lieu de `hitResult.Material`
+- [ ] **Son non approuve** : `rbxassetid://3802437361` — asset pas approuve pour le compte
+
+## Bugs resolus cette session
+
+- [x] **Infinite yield WeaponConfig** : UIController attendait WeaponConfig dans ReplicatedStorage.Shared — resolu en restaurant WeaponConfig.lua
+- [x] **Rojo supprimait les scripts Fe Kit** : ajout de `$ignoreUnknownInstances: true` sur ServerScriptService et StarterPlayerScripts
+- [x] **Camera en Classic au lieu de FPS** : remis `LockFirstPerson` dans UIController
+- [x] **Fe Weapon Kit supprime par Rojo** : resolu par ignoreUnknownInstances
 
 ---
 
@@ -110,16 +125,7 @@ Pour synchroniser le code :
 4. Connecter le plugin Rojo dans Studio
 5. `git commit` + `git push` / `git pull` pour partager les changements
 
----
-
-## Ce qui a ete supprime (ancien systeme)
-
-Les fichiers suivants ont ete supprimes car remplaces par le Fe Weapon Kit :
-- `InputController.client.lua` -- ancien systeme de tir, raycast, rechargement, switch, viewmodel
-- `ViewmodelController.client.lua` -- ancien systeme de bobbing, sway, tilt
-- `WeaponConfig.lua` -- ancienne config des armes (degats, RPM, portee...)
-
-Le HUD a ete nettoye : suppression de l'affichage munitions (AmmoFrame), du hint de reload, et du listener UpdateAmmo. L'event UpdateAmmo a ete retire du project.json.
+**IMPORTANT** : ne jamais sync Rojo sans `$ignoreUnknownInstances: true` sur les dossiers contenant des scripts Fe Kit, sinon ils seront supprimes.
 
 ---
 
@@ -132,8 +138,8 @@ Puis connecte le plugin **Rojo** dans Roblox Studio.
 
 ---
 
-## Prochaines etapes suggerees
-- [ ] **Creer un Groupe Roblox** pour regler les permissions d'animations
+## Prochaines etapes
+- [ ] **Fix animation idle** : comparer le script Animate par defaut entre cette experience et l'autre ou ca marche
 - [ ] **Connecter le Fe Kit a l'economie** : fire `DamageZombie` depuis le Fe Kit pour gagner de l'argent par tir
 - [ ] **Verifier le reward par kill** : tester que l'argent est bien donne quand un zombie meurt
 - [ ] Perks (Juggernog, Speed Cola, Double Tap...)
