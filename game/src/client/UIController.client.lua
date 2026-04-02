@@ -19,7 +19,7 @@ local Constants = require(Shared:WaitForChild("Constants"))
 local function createClassSelectionUI()
 	local UserInputService = game:GetService("UserInputService")
 	UserInputService.MouseIconEnabled = true
-	player.CameraMode = Enum.CameraMode.Classic
+	player.CameraMode = Enum.CameraMode.LockFirstPerson
 
 	local screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "ClassSelection"
@@ -127,7 +127,7 @@ local function createClassSelectionUI()
 			-- Cacher le curseur de la souris pour le gameplay FPS
 			local UserInputService = game:GetService("UserInputService")
 			UserInputService.MouseIconEnabled = false
-			player.CameraMode = Enum.CameraMode.Classic
+			player.CameraMode = Enum.CameraMode.LockFirstPerson
 			
 			-- Fermer l'UI
 			TweenService:Create(bg, TweenInfo.new(0.3), {
