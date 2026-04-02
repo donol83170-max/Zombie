@@ -13,17 +13,13 @@ local OPEN_TIME = 1.5 -- secondes pour l'animation
 local GATE_PRICE = 1500
 
 local function setupGate(gateModel)
-	-- Trouver les deux battants
-	local innerGate = gateModel:FindFirstChild("Gate")
-	if not innerGate then
-		warn("[GateManager] Pas de sous-model 'Gate' trouvé dans", gateModel:GetFullName())
-		return
-	end
+	-- Trouver les deux battants (supporte Gate>Gate>Doors OU Gate>Doors directement)
+	local innerGate = gateModel:FindFirstChild("Gate") or gateModel
 
-	local doorL = innerGate:FindFirstChild("DoorCLoseL")
+	local doorL = innerGate:FindFirstChild("DoorCloseL") or innerGate:FindFirstChild("DoorCLoseL")
 	local doorR = innerGate:FindFirstChild("DoorCloseR")
 	if not doorL or not doorR then
-		warn("[GateManager] DoorCLoseL ou DoorCloseR introuvable")
+		warn("[GateManager] DoorCloseL ou DoorCloseR introuvable dans", gateModel:GetFullName())
 		return
 	end
 
@@ -101,7 +97,8 @@ local function setupGate(gateModel)
 	prompt.ActionText = "Ouvrir — $" .. GATE_PRICE
 	prompt.ObjectText = "Portail"
 	prompt.HoldDuration = 0.5
-	prompt.MaxActivationDistance = 10
+	prompt.MaxActivationDistance = 30
+	prompt.RequiresLineOfSight = false  -- les barreaux du portail bloquent la vue
 	prompt.KeyboardKeyCode = Enum.KeyCode.E
 	prompt.Parent = promptPart
 
@@ -156,8 +153,9 @@ end
 local function findGates(parent)
 	for _, child in ipairs(parent:GetChildren()) do
 		if child:IsA("Model") and child.Name == "Gate" then
-			local innerGate = child:FindFirstChild("Gate")
-			if innerGate and innerGate:FindFirstChild("DoorCLoseL") then
+			local innerGate = child:FindFirstChild("Gate") or child
+			local doorL = innerGate:FindFirstChild("DoorCloseL") or innerGate:FindFirstChild("DoorCLoseL")
+			if doorL then
 				setupGate(child)
 			end
 		end
@@ -167,5 +165,16 @@ end
 
 task.wait(2) -- Attendre que la map soit chargée
 findGates(workspace)
+
+-- DEBUG : si aucun portail trouvé, afficher tout ce qui s'appelle Gate
+print("[GateManager] === DEBUG : recherche de tous les Gate ===")
+for _, obj in ipairs(workspace:GetDescendants()) do
+	if obj.Name == "Gate" then
+		print("[GateManager] Trouvé:", obj:GetFullName(), "| IsModel:", obj:IsA("Model"), "| Class:", obj.ClassName)
+		for _, child in ipairs(obj:GetChildren()) do
+			print("  └──", child.Name, "| Class:", child.ClassName)
+		end
+	end
+end
 
 print("[GateManager] Initialisé !")
