@@ -8,6 +8,7 @@
 - Les armes sont des Tools dans le Backpack du joueur
 - BindableEvents (`gunEvent`, `viewmodelEvent`) et BindableFunctions (`gunFunction`, `viewmodelFunction`) dans ReplicatedStorage.Events
 - **WeaponConfig.lua** restaure dans `src/shared/` : table des armes (degats, RPM, portee, prix, sons)
+- **Animation idle custom** sur les armes (SIGSAUERP250, etc.)
 
 ### Economie (Serveur-Autoritaire)
 - **Reward par kill** : argent donne au joueur le plus proche quand un zombie meurt
@@ -96,18 +97,26 @@
 
 ---
 
-## Bug en cours
+## Bugs resolus
 
-- [ ] **Animation idle du gun ne se joue pas** : l'animation est chargee et tourne (visible dans GetPlayingAnimationTracks) mais les animations par defaut de Roblox (idle, toolnone) l'ecrasent visuellement car elles ont la meme priorite (Core). Fonctionne sur une autre experience avec le meme Fe Kit — a investiguer (possiblement le script Animate par defaut qui differe)
-- [ ] **Erreur ProjectileHandler:519** : `argument #1 expects a string, but EnumItem was passed` dans MakeImpactFX — fix : `hitResult.Material.Name` au lieu de `hitResult.Material`
-- [ ] **Son non approuve** : `rbxassetid://3802437361` — asset pas approuve pour le compte
-
-## Bugs resolus cette session
-
+- [x] **Animation idle ne s'affichait pas** : l'animation etait creee a partir d'un rig/module n'appartenant pas au compte owner de l'experience. Resolu en recreant l'animation sur un rig appartenant au bon compte
 - [x] **Infinite yield WeaponConfig** : UIController attendait WeaponConfig dans ReplicatedStorage.Shared — resolu en restaurant WeaponConfig.lua
 - [x] **Rojo supprimait les scripts Fe Kit** : ajout de `$ignoreUnknownInstances: true` sur ServerScriptService et StarterPlayerScripts
 - [x] **Camera en Classic au lieu de FPS** : remis `LockFirstPerson` dans UIController
 - [x] **Fe Weapon Kit supprime par Rojo** : resolu par ignoreUnknownInstances
+
+## Bugs restants
+
+- [ ] **Erreur ProjectileHandler:519** : `argument #1 expects a string, but EnumItem was passed` dans MakeImpactFX — fix : `hitResult.Material.Name` au lieu de `hitResult.Material` (dans le .rbxl)
+- [ ] **Son non approuve** : `rbxassetid://3802437361` — asset pas approuve pour le compte
+
+---
+
+## Notes importantes pour les animations
+
+- Les animations doivent etre **publiees sous le meme compte** que le proprietaire de l'experience
+- Les animations doivent etre **creees a partir d'un rig/module appartenant au meme compte** — sinon elles tournent en arriere-plan mais ne s'affichent pas visuellement
+- Verifier avec `GetPlayingAnimationTracks()` dans la Command Bar pour debugger
 
 ---
 
@@ -139,9 +148,9 @@ Puis connecte le plugin **Rojo** dans Roblox Studio.
 ---
 
 ## Prochaines etapes
-- [ ] **Fix animation idle** : comparer le script Animate par defaut entre cette experience et l'autre ou ca marche
 - [ ] **Connecter le Fe Kit a l'economie** : fire `DamageZombie` depuis le Fe Kit pour gagner de l'argent par tir
 - [ ] **Verifier le reward par kill** : tester que l'argent est bien donne quand un zombie meurt
+- [ ] Ajouter animations idle/tir/reload sur toutes les armes
 - [ ] Perks (Juggernog, Speed Cola, Double Tap...)
 - [ ] Pack-a-Punch (amelioration d'armes)
 - [ ] Nouvelles armes avec leurs modeles 3D
