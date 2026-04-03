@@ -17,7 +17,11 @@
 - Multiplicateur de classe et bonus double argent
 
 ### Zombies
-- Nom obligatoire : `Enemy_XYZ` (ex : `Enemy_Basic`, `Enemy_Boss`)
+- **Modeles custom avec animations et sons** : glisser vos modeles dans `ServerStorage > ZombieTemplates`
+- **Variantes aleatoires** : mettre plusieurs modeles dans un **Folder** (ex : `ZombieTemplates/Zombie/Variant_1`, `Variant_2`) → un modele est choisi au hasard a chaque spawn
+- **Template unique** : ou mettre un seul Model directement (ex : `ZombieTemplates/Zombie`)
+- Recherche du template par nom : `Enemy_Basic` → `Basic` → `displayName` (ex : "Zombie")
+- Les scripts parasites du modele (Respawn, Script) sont supprimes au spawn, les scripts utiles (Animate, sons) sont conserves
 - Vie evolutive selon la manche (config dans `ZombieConfig.lua`)
 - Types : Basic (100 HP), Rapide (50 HP), Tank (500 HP), Explosif (75 HP), Boss (2000 HP)
 
@@ -104,6 +108,9 @@
 - [x] **Rojo supprimait les scripts Fe Kit** : ajout de `$ignoreUnknownInstances: true` sur ServerScriptService et StarterPlayerScripts
 - [x] **Camera en Classic au lieu de FPS** : remis `LockFirstPerson` dans UIController
 - [x] **Fe Weapon Kit supprime par Rojo** : resolu par ignoreUnknownInstances
+- [x] **Scripts parasites dans les modeles zombie** (Respawn, Script, Health) : causaient des erreurs Torso/HumanoidRootPart/Humanoid. Resolu en ne supprimant que les scripts inutiles (Respawn, Script) et en gardant Animate + sons
+- [x] **Animations zombie ne marchaient pas** : WaveManager supprimait tous les scripts dont Animate. Resolu en ciblant uniquement les scripts parasites
+- [x] **Un seul zombie spawnait malgre plusieurs modeles** : ajout du support Folder avec variantes aleatoires dans WaveManager
 
 ## Bugs restants
 

@@ -137,7 +137,23 @@ local function createZombieModel(zombieType, wave)
 
 	local zombie
 	local templates = ServerStorage:FindFirstChild("ZombieTemplates")
-	local template = templates and (templates:FindFirstChild("Enemy_" .. zombieType) or templates:FindFirstChild(zombieType))
+	local template = nil
+	if templates then
+		-- Chercher le template par nom (Enemy_Basic, Basic, ou displayName comme "Zombie")
+		local found = templates:FindFirstChild("Enemy_" .. zombieType) or templates:FindFirstChild(zombieType) or templates:FindFirstChild(config.displayName)
+		if found then
+			if found:IsA("Model") then
+				-- Template unique
+				template = found
+			elseif found:IsA("Folder") then
+				-- Dossier de variantes → choisir au hasard
+				local variants = found:GetChildren()
+				if #variants > 0 then
+					template = variants[math.random(1, #variants)]
+				end
+			end
+		end
+	end
 
 	if template then
 		zombie = template:Clone()
@@ -246,7 +262,8 @@ local function createZombieModel(zombieType, wave)
 		if part:IsA("BasePart") then
 			part.CollisionGroup = "Zombies"
 			part.Anchored = false
-		elseif part:IsA("Script") or part:IsA("LocalScript") then
+		elseif (part:IsA("Script") or part:IsA("LocalScript"))
+			and (part.Name == "Respawn" or part.Name == "Script") then
 			part:Destroy()
 		end
 	end
