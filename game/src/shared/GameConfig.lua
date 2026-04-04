@@ -37,7 +37,7 @@ GameConfig.BOSS_REWARD = 500
 
 -- === ÉCONOMIE ===
 GameConfig.MONEY_PER_HIT = 10
-GameConfig.STARTING_MONEY = 2000  -- TEMP TEST
+GameConfig.STARTING_MONEY = 0
 
 -- === JOUEUR ===
 GameConfig.DEFAULT_MAX_HP = 100
