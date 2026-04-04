@@ -37,7 +37,7 @@ GameConfig.BOSS_REWARD = 500
 
 -- === ÉCONOMIE ===
 GameConfig.MONEY_PER_HIT = 10
-GameConfig.STARTING_MONEY = 0
+GameConfig.STARTING_MONEY = 2000  -- TEMP TEST
 
 -- === JOUEUR ===
 GameConfig.DEFAULT_MAX_HP = 100
@@ -48,6 +48,9 @@ GameConfig.DOOR_PRICES = {
     Door_Zone2 = 750,
     Door_Zone3 = 2000,
 }
+
+-- === FORTERESSE ===
+GameConfig.FORTRESS_PRICE = 1500  -- les deux portes s'ouvrent ensemble
 
 -- === BONUS (probabilités) ===
 GameConfig.BONUS_PROBABILITIES = {

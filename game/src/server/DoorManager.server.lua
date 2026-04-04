@@ -92,14 +92,11 @@ end
 
 -- === INITIALISATION ===
 
-local doorsFolder = workspace:FindFirstChild("Doors")
-if doorsFolder and #doorsFolder:GetChildren() == 0 then
-	-- Porte vers Zone 2
-	createDoor("Door_Zone2", Vector3.new(0, 6, -25), 750, doorsFolder)
-	-- Porte vers Zone 3
-	createDoor("Door_Zone3", Vector3.new(0, 6, -75), 2000, doorsFolder)
-
-	print("[DoorManager] Portes par défaut créées")
-end
+-- Portes automatiques désactivées (map utilise le système FortressDoorManager)
+-- local doorsFolder = workspace:FindFirstChild("Doors")
+-- if doorsFolder and #doorsFolder:GetChildren() == 0 then
+-- 	createDoor("Door_Zone2", Vector3.new(0, 6, -25), 750, doorsFolder)
+-- 	createDoor("Door_Zone3", Vector3.new(0, 6, -75), 2000, doorsFolder)
+-- end
 
 print("[DoorManager] Initialisé !")
