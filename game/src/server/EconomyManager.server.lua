@@ -10,6 +10,7 @@ local Events = ReplicatedStorage:WaitForChild("Events")
 local GameConfig = require(Shared:WaitForChild("GameConfig"))
 local ClassConfig = require(Shared:WaitForChild("ClassConfig"))
 
+local WeaponConfig = require(Shared:WaitForChild("WeaponConfig"))
 local UpdateMoney = Events:WaitForChild("UpdateMoney")
 local ShowNotification = Events:WaitForChild("ShowNotification")
 local ZombieDied = Events:WaitForChild("ZombieDied")
@@ -128,10 +129,16 @@ DamageZombie.OnServerEvent:Connect(function(player, zombieModel, isHeadshot, wea
 	
 	if not humanoid or humanoid.Health <= 0 then return end
 	
-	print(string.format("[EconomyManager] HIT VALIDÉ ! Zombie: %s | Vie: %.1f", zombieModel.Name, humanoid.Health))
+	-- Appliquer les dégâts depuis WeaponConfig
+	local wData = WeaponConfig.Weapons[weaponName]
+	local damage = wData and wData.damage or 15
+	if isHeadshot then
+		damage = damage * (wData and wData.headshotMult or 2.0)
+	end
+	humanoid:TakeDamage(damage)
+	print(string.format("[EconomyManager] HIT ! Zombie: %s | Dégâts: %.0f | Vie restante: %.1f", zombieModel.Name, damage, humanoid.Health))
 
 	-- Récompense d'impact : $50 headshot, $10 body
-	-- Les dégâts sont gérés par le système d'armes (Fe Weapon Kit)
 	local reward = isHeadshot and 50 or 10
 	EconomyManager.addMoney(player, reward)
 end)
