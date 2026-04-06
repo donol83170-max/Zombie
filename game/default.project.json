@@ -89,6 +89,12 @@
         "DamageZombie": {
           "$className": "RemoteEvent"
         },
+        "UpdateAmmo": {
+          "$className": "RemoteEvent"
+        },
+        "npcShoot": {
+          "$className": "BindableEvent"
+        },
         "gunEvent": {
           "$className": "BindableEvent"
         },
