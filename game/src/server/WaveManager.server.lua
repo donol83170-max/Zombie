@@ -504,18 +504,27 @@ local function spawnWave(wave)
 		shuffledSpawns[i], shuffledSpawns[j] = shuffledSpawns[j], shuffledSpawns[i]
 	end
 
-	-- Spawn progressif
-	task.spawn(function()
-		for i = 1, totalZombies do
-			if not gameActive then break end
+	-- Spawn progressif (manche 1 = tous en même temps avec délai aléatoire 0-5s)
+	for i = 1, totalZombies do
+		task.spawn(function()
+			if not gameActive then return end
+
+			-- Manche 1 : délai aléatoire entre 0 et 5s pour spawn simultané éparpillé
+			if wave == 1 then
+				task.wait(rng:NextNumber(0, 5))
+			else
+				local interval = rng:NextNumber() *
+					(GameConfig.SPAWN_INTERVAL_MAX - GameConfig.SPAWN_INTERVAL_MIN) +
+					GameConfig.SPAWN_INTERVAL_MIN
+				task.wait(interval * (i - 1))
+			end
+
+			if not gameActive then return end
 
 			local zombieType = chooseZombieType(wave)
 			local zombie = createZombieModel(zombieType, wave)
 
-			-- Distribution mathématique parfaite : 1 zombie par spawn, puis on boucle
-			local spawnIndex = ((i - 1) % #shuffledSpawns) + 1
-			local spawnPoint = shuffledSpawns[spawnIndex]
-			
+			local spawnPoint = shuffledSpawns[rng:NextInteger(1, #shuffledSpawns)]
 			local spawnPos = spawnPoint.Position + Vector3.new(
 				rng:NextNumber(-3, 3), 3, rng:NextNumber(-3, 3)
 			)
@@ -524,14 +533,8 @@ local function spawnWave(wave)
 
 			table.insert(activeZombies, zombie)
 			setupZombieAI(zombie)
-
-			-- Intervalle entre spawns
-			local interval = rng:NextNumber() * 
-				(GameConfig.SPAWN_INTERVAL_MAX - GameConfig.SPAWN_INTERVAL_MIN) + 
-				GameConfig.SPAWN_INTERVAL_MIN
-			task.wait(interval)
-		end
-	end)
+		end)
+	end
 end
 
 local function waitForWaveEnd()
