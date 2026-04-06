@@ -134,11 +134,8 @@ local function setupZombieSounds(zombie)
 			snd.RollOffMinDistance = 8
 			snd.Looped = false
 			snd.Volume = math.min(snd.Volume, 0.4)
-			local lowerName = string.lower(snd.Name)
-			if lowerName == "moan" or lowerName == "zombie" or lowerName == "idle"
-				or lowerName == "growl" or lowerName == "groan" then
-				table.insert(groanSounds, snd)
-			end
+			-- Inclure tous les sons (pas seulement ceux avec un nom spécifique)
+			table.insert(groanSounds, snd)
 		end
 		-- Jouer un son aléatoire toutes les 4-10 secondes
 		if #groanSounds > 0 then
