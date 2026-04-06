@@ -93,7 +93,7 @@
           "$className": "RemoteEvent"
         },
         "npcShoot": {
-          "$className": "RemoteEvent"
+          "$className": "BindableEvent"
         },
         "gunEvent": {
           "$className": "BindableEvent"
