@@ -73,7 +73,8 @@ local function setupAmmoBox(ammoBox)
 	prompt.ActionText = "Recharger ($" .. AMMO_PRICE .. ")"
 	prompt.KeyboardKeyCode = Enum.KeyCode.E
 	prompt.HoldDuration = 0.5
-	prompt.MaxActivationDistance = 8
+	prompt.MaxActivationDistance = 15
+	prompt.RequiresLineOfSight = false
 	prompt.Parent = part
 
 	prompt.Triggered:Connect(function(player)

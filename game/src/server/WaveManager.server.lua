@@ -142,7 +142,7 @@ local function setupZombieSounds(zombie)
 			task.spawn(function()
 				local humanoid = zombie:FindFirstChildOfClass("Humanoid")
 				while zombie.Parent and humanoid and humanoid.Health > 0 do
-					task.wait(math.random(4, 10))
+					task.wait(math.random(2, 5))
 					if zombie.Parent and humanoid.Health > 0 then
 						local snd = groanSounds[math.random(1, #groanSounds)]
 						snd.PlaybackSpeed = 0.8 + math.random() * 0.4
