@@ -103,11 +103,25 @@ local function setupAmmoBox(ammoBox)
 end
 
 -- Chercher AmmoBox dans map1 (et toutes les maps)
+local configuredModels = {} -- éviter double setup
+
 local function findAndSetupAmmoBoxes()
 	for _, obj in ipairs(workspace:GetDescendants()) do
 		if obj.Name == "Ammo Box" or obj.Name == "AmmoBox" or obj.Name == "ammo box" then
 			if obj:IsA("Model") or obj:IsA("BasePart") then
-				setupAmmoBox(obj:IsA("Model") and obj or obj.Parent)
+				local target = obj:IsA("Model") and obj or obj.Parent
+				-- Ne configurer que si ce n'est pas un enfant d'un modèle déjà configuré
+				local alreadyHandled = false
+				for _, configured in ipairs(configuredModels) do
+					if target == configured or target:IsDescendantOf(configured) then
+						alreadyHandled = true
+						break
+					end
+				end
+				if not alreadyHandled then
+					table.insert(configuredModels, target)
+					setupAmmoBox(target)
+				end
 			end
 		end
 	end
