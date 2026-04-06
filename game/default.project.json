@@ -27,6 +27,40 @@
         "$className": "Folder",
         "$ignoreUnknownInstances": true
       },
+      "Remotes": {
+        "$className": "Folder",
+        "$ignoreUnknownInstances": true,
+        "PlayAudio": {
+          "$className": "RemoteEvent"
+        },
+        "VisualizeBullet": {
+          "$className": "RemoteEvent"
+        },
+        "VisualizeHitEffect": {
+          "$className": "RemoteEvent"
+        },
+        "VisualizeBeam": {
+          "$className": "RemoteEvent"
+        },
+        "VisibleMuzzle": {
+          "$className": "RemoteEvent"
+        },
+        "VisualizeCharge": {
+          "$className": "RemoteEvent"
+        },
+        "VisualizeOverheat": {
+          "$className": "RemoteEvent"
+        },
+        "VisualizeGore": {
+          "$className": "RemoteEvent"
+        },
+        "VisualizeMeleeEffect": {
+          "$className": "RemoteEvent"
+        },
+        "LoadViewmodelAppearance": {
+          "$className": "RemoteEvent"
+        }
+      },
       "Events": {
         "$className": "Folder",
         "RequestBuyWallWeapon": {
