@@ -59,6 +59,12 @@
         },
         "LoadViewmodelAppearance": {
           "$className": "RemoteEvent"
+        },
+        "InflictTarget": {
+          "$className": "RemoteEvent"
+        },
+        "ShatterGlass": {
+          "$className": "RemoteEvent"
         }
       },
       "Events": {
