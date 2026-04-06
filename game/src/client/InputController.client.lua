@@ -134,6 +134,7 @@ end
 local function updateViewModel(weaponName)
 	if currentWeaponNameCache == weaponName then return end
 	currentWeaponNameCache = weaponName
+	print("[VM] updateViewModel appelé pour:", weaponName)
 
 	-- Détruire l'ancien modèle
 	if currentViewModel then
@@ -142,7 +143,10 @@ local function updateViewModel(weaponName)
 	end
 
 	-- Cloner les bras (VMTemplate)
+	print("[VM] armsTemplate:", armsTemplate, armsTemplate and armsTemplate.ClassName)
 	local arms = armsTemplate:Clone()
+	print("[VM] arms cloné, contenu:")
+	for _, v in ipairs(arms:GetChildren()) do print("  " .. v.Name .. " | " .. v.ClassName) end
 
 	-- Supprimer les éléments de preview Studio
 	local cam = arms:FindFirstChild("Camera")
@@ -171,6 +175,7 @@ local function updateViewModel(weaponName)
 	-- Trouver le point d'attache sur la main droite
 	local rightArm = arms:FindFirstChild("Right Arm")
 	local gripAttachment = rightArm and rightArm:FindFirstChild("RightGripAttachment")
+	print("[VM] Right Arm:", rightArm, "| GripAttachment:", gripAttachment)
 
 	-- Chercher le modèle d'arme
 	local weaponsFolder = ReplicatedStorage:FindFirstChild("Weapons")
