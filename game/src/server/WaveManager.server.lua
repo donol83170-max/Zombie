@@ -162,7 +162,15 @@ local function createZombieModel(zombieType, wave)
 		if not zombie.PrimaryPart then
 			zombie.PrimaryPart = zombie:FindFirstChild("HumanoidRootPart") or zombie:FindFirstChild("Torso")
 		end
-		
+
+		-- Supprimer les vieux scripts du template qui causent des erreurs
+		-- (Health et SoundScript cherchent Humanoid/Moan qui n'existent pas)
+		for _, s in ipairs(zombie:GetDescendants()) do
+			if s:IsA("Script") and (s.Name == "Health" or s.Name == "SoundScript") then
+				s:Destroy()
+			end
+		end
+
 		-- S'assurer que le zombie téléchargé peut bouger (désancrer toutes les parts)
 		for _, desc in ipairs(zombie:GetDescendants()) do
 			if desc:IsA("BasePart") then
