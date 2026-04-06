@@ -113,7 +113,21 @@ local function findAndSetupAmmoBoxes()
 	end
 end
 
--- Attendre que le workspace soit chargé
-task.wait(2)
+-- Attendre que le workspace soit chargé, puis surveiller les nouveaux objets
+task.wait(3)
 findAndSetupAmmoBoxes()
+
+-- Surveiller les ajouts futurs (si la map charge après le script)
+workspace.DescendantAdded:Connect(function(obj)
+	if (obj.Name == "Ammo Box" or obj.Name == "AmmoBox" or obj.Name == "ammo box"
+		or obj.Name == "AMMO BOX" or obj.Name == "Ammo_Box") then
+		task.wait(0.1) -- laisser le modèle se construire
+		if obj:IsA("Model") then
+			setupAmmoBox(obj)
+		elseif obj:IsA("BasePart") and obj.Parent:IsA("Model") then
+			setupAmmoBox(obj.Parent)
+		end
+	end
+end)
+
 print("[AmmoBoxManager] Initialisé !")
