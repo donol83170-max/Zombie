@@ -95,6 +95,9 @@
         "npcShoot": {
           "$className": "BindableEvent"
         },
+        "inflictTargetNPC": {
+          "$className": "BindableEvent"
+        },
         "gunEvent": {
           "$className": "BindableEvent"
         },
