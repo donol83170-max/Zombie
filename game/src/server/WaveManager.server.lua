@@ -106,6 +106,76 @@ local function getZombieSpawnPoints()
 	return children
 end
 
+-- === SONS ZOMBIE ===
+-- On réutilise les sons déjà dans les templates Toolbox.
+-- Si aucun son n'existe dans le template, on en crée avec les sons
+-- par défaut de Roblox (Humanoid/Splash etc.) qui ne nécessitent pas d'autorisation.
+
+local function setupZombieSounds(zombie)
+	local rootPart = zombie:FindFirstChild("HumanoidRootPart") or zombie.PrimaryPart
+	local head = zombie:FindFirstChild("Head")
+	local soundParent = head or rootPart
+	if not soundParent then return end
+
+	-- Collecter TOUS les sons existants dans le template (modèles Toolbox)
+	local existingSounds = {}
+	for _, desc in ipairs(zombie:GetDescendants()) do
+		if desc:IsA("Sound") then
+			table.insert(existingSounds, desc)
+		end
+	end
+
+	if #existingSounds > 0 then
+		-- Le template a des sons ! Les configurer (pas en boucle permanente)
+		print("[WaveManager] Sons template trouvés (" .. #existingSounds .. ") pour " .. zombie.Name)
+		local groanSounds = {}
+		for _, snd in ipairs(existingSounds) do
+			snd.RollOffMaxDistance = 60
+			snd.RollOffMinDistance = 8
+			snd.Looped = false
+			snd.Volume = math.min(snd.Volume, 0.4)
+			local lowerName = string.lower(snd.Name)
+			if lowerName == "moan" or lowerName == "zombie" or lowerName == "idle"
+				or lowerName == "growl" or lowerName == "groan" then
+				table.insert(groanSounds, snd)
+			end
+		end
+		-- Jouer un son aléatoire toutes les 4-10 secondes
+		if #groanSounds > 0 then
+			task.spawn(function()
+				local humanoid = zombie:FindFirstChildOfClass("Humanoid")
+				while zombie.Parent and humanoid and humanoid.Health > 0 do
+					task.wait(math.random(4, 10))
+					if zombie.Parent and humanoid.Health > 0 then
+						local snd = groanSounds[math.random(1, #groanSounds)]
+						snd.PlaybackSpeed = 0.8 + math.random() * 0.4
+						snd:Play()
+					end
+				end
+			end)
+		end
+	else
+		-- Pas de sons dans le template → créer un grognement zombie maison
+		-- On utilise le système Humanoid de Roblox : quand un Humanoid bouge,
+		-- il joue déjà des sons de pas. On ajoute juste un grognement ambiant.
+		print("[WaveManager] Pas de sons template pour " .. zombie.Name .. " — grognement Humanoid activé")
+
+		-- Activer les sons Humanoid par défaut (Running, etc.)
+		local humanoid = zombie:FindFirstChildOfClass("Humanoid")
+		if humanoid then
+			-- Le HumanoidRootPart a normalement des sons par défaut de Roblox
+			-- On cherche les sons qui existent déjà dans le HumanoidRootPart
+			local hrpSounds = rootPart and rootPart:GetChildren() or {}
+			for _, child in ipairs(hrpSounds) do
+				if child:IsA("Sound") then
+					child.Volume = 0.3
+					child.RollOffMaxDistance = 60
+				end
+			end
+		end
+	end
+end
+
 -- === ZOMBIE CREATION ===
 
 local function chooseZombieType(wave)
@@ -163,8 +233,10 @@ local function createZombieModel(zombieType, wave)
 			zombie.PrimaryPart = zombie:FindFirstChild("HumanoidRootPart") or zombie:FindFirstChild("Torso")
 		end
 
-		-- Supprimer les vieux scripts du template qui causent des erreurs
-		-- (Health et SoundScript cherchent Humanoid/Moan qui n'existent pas)
+		-- Supprimer les scripts Toolbox cassés qui spamment des erreurs :
+		-- - SoundScript cherche Head.Moan qui n'existe pas → crash
+		-- - Health cherche Humanoid via WaitForChild → infinite yield
+		-- Les objets Sound (grognements, etc.) sont PRÉSERVÉS et joués par setupZombieSounds()
 		for _, s in ipairs(zombie:GetDescendants()) do
 			if s:IsA("Script") and (s.Name == "Health" or s.Name == "SoundScript") then
 				s:Destroy()
@@ -274,7 +346,11 @@ local function createZombieModel(zombieType, wave)
 			and (part.Name == "Respawn" or part.Name == "Script") then
 			part:Destroy()
 		end
+		-- NOTE : On préserve les objets Sound pour les voix/grognements
 	end
+
+	-- Ajouter/activer les sons zombies (grognements, attaque, mort)
+	setupZombieSounds(zombie)
 
 	return zombie
 end
@@ -342,7 +418,18 @@ local function setupZombieAI(zombie)
 						if tick() - lastHit >= 1 then
 							target.Character:SetAttribute("LastHitTime", tick())
 							-- On force 25 dégâts pour tuer en exactement 4 coups (sur 100 HP)
-							targetHumanoid:TakeDamage(25) 
+							targetHumanoid:TakeDamage(25)
+
+							-- Jouer un son d'attaque si le zombie en a un
+							for _, snd in ipairs(zombie:GetDescendants()) do
+								if snd:IsA("Sound") then
+									local ln = string.lower(snd.Name)
+									if (ln == "attack" or ln == "bite" or ln == "hit") and not snd.Playing then
+										snd:Play()
+										break
+									end
+								end
+							end
 						end
 					end
 				end
@@ -356,6 +443,13 @@ local function setupZombieAI(zombie)
 	humanoid.Died:Connect(function()
 		isDead = true
 		zombiesAlive -= 1
+
+		-- Arrêter tous les sons en boucle du zombie
+		for _, snd in ipairs(zombie:GetDescendants()) do
+			if snd:IsA("Sound") and snd.Looped then
+				snd:Stop()
+			end
+		end
 
 		-- Retirer de la liste active
 		for i, z in ipairs(activeZombies) do
