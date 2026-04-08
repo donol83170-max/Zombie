@@ -148,6 +148,12 @@
         },
         "viewmodelFunction": {
           "$className": "BindableFunction"
+        },
+        "npcShoot": {
+          "$className": "BindableEvent"
+        },
+        "inflictTargetNPC": {
+          "$className": "BindableEvent"
         }
       }
     },
