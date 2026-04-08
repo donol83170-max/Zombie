@@ -132,6 +132,52 @@
 - [x] **Animations zombie ne marchaient pas** : WaveManager supprimait tous les scripts dont Animate. Resolu en ciblant uniquement les scripts parasites
 - [x] **Un seul zombie spawnait malgre plusieurs modeles** : ajout du support Folder avec variantes aleatoires dans WaveManager
 - [x] **Caractere Unicode `ae` dans Setting** : un caractere special au debut du fichier config de l'arme causait un crash du Fe Kit (bras invisibles). Resolu en supprimant le caractere
+- [x] **JOUEUR S'ENVOLE EN EQUIPPANT UNE ARME** : voir section detaillee ci-dessous
+
+---
+
+## Bug resolu : Joueur propulse dans les airs (ou sous terre) en equipant une arme
+
+### Symptome
+Quand le joueur equipait la M16A4 ou le SIGSAUERP250, il etait violemment propulse vers l'arriere, vers le haut ou vers le bas. Sans arme equipee, tout fonctionnait normalement.
+
+### Cause racine
+Le **Fe Weapon Kit** utilise un module `ViewmodelHandler` (dans `ReplicatedStorage/Modules`) qui cree les bras FPS du joueur. Dans ce module (ligne ~130), il appelle :
+```lua
+PhysicsService:SetPartCollisionGroup(child, "Viewmodel")
+```
+Le probleme : le groupe de collision **"Viewmodel"** n'avait **jamais ete enregistre** dans le jeu ! L'appel echouait silencieusement, et toutes les pieces des bras FPS restaient dans le groupe **"Default"** — ce qui leur permettait de **collisionner physiquement** avec le corps du joueur. Le moteur physique de Roblox detectait une penetration entre les bras et la tete du joueur, et ejectait le personnage violemment.
+
+### Pourquoi les anciens patchs ne marchaient pas
+Plusieurs tentatives ont ete faites cote **serveur** (Heartbeat loop, ChildAdded, etc.) pour forcer `Massless = true` et `CanCollide = false` sur les pieces des armes. **Aucune n'a marche** car le personnage du joueur appartient au **client** cote reseau (Network Ownership). Les modifications serveur sur les parts attachees au personnage sont **ignorees** par le moteur physique client.
+
+### Solution (3 corrections)
+
+#### 1. Enregistrement du groupe "Viewmodel" (`GameInit.server.lua`)
+```lua
+PhysicsService:RegisterCollisionGroup("Viewmodel")
+PhysicsService:CollisionGroupSetCollidable("Viewmodel", "Default", false)
+PhysicsService:CollisionGroupSetCollidable("Viewmodel", "Zombies", false)
+```
+Le nom **"Viewmodel"** (singulier, sans 's') correspond exactement a ce que le Fe Kit attend. Maintenant, quand le Fe Kit appelle `SetPartCollisionGroup(child, "Viewmodel")`, l'appel reussit et les bras ne peuvent plus collisionner avec le joueur ni les zombies.
+
+#### 2. Fix physique cote client (`InputController.client.lua`)
+Une boucle `RenderStepped` qui force `Massless = true` et `CanCollide = false` sur toutes les `BasePart` des Tools equipes dans le Character du joueur. Ceci est fait **cote client** car c'est le client qui a l'autorite reseau sur son personnage.
+
+#### 3. Protection Rojo (`default.project.json`)
+Ajout des dossiers **Modules**, **Miscs** et **Remotes** avec `$ignoreUnknownInstances: true` dans la config Rojo. Sans ca, Rojo supprimait ces dossiers critiques du Fe Kit a chaque synchronisation, causant des erreurs "Infinite yield".
+
+### Nettoyage effectue
+- **Supprime** : `ViewmodelController.client.lua` (ancien systeme maison de bras FPS qui entrait en conflit avec le Fe Kit)
+- **Nettoye** : `InputController.client.lua` (suppression de l'ancien systeme de tir/rechargement/raycast maison — le Fe Kit gere tout ca)
+- Les armes utilisent maintenant l'**inventaire natif Roblox** (Backpack, touches 1/2/3) au lieu d'un systeme custom de slots
+
+### Lecons apprises
+1. **Toujours verifier les noms exacts** des groupes de collision attendus par les kits tiers
+2. **Les modifications physiques doivent etre cote client** quand elles concernent le personnage du joueur
+3. **Proteger tous les dossiers Fe Kit dans Rojo** avec `$ignoreUnknownInstances: true` (Modules, Miscs, Remotes, Weapons)
+
+---
 
 ## Bugs restants
 

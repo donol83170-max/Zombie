@@ -23,6 +23,14 @@
       "Shared": {
         "$path": "src/shared"
       },
+      "Modules": {
+        "$className": "Folder",
+        "$ignoreUnknownInstances": true
+      },
+      "Miscs": {
+        "$className": "Folder",
+        "$ignoreUnknownInstances": true
+      },
       "Weapons": {
         "$className": "Folder",
         "$ignoreUnknownInstances": true
@@ -128,15 +136,6 @@
         },
         "DamageZombie": {
           "$className": "RemoteEvent"
-        },
-        "UpdateAmmo": {
-          "$className": "RemoteEvent"
-        },
-        "npcShoot": {
-          "$className": "BindableEvent"
-        },
-        "inflictTargetNPC": {
-          "$className": "BindableEvent"
         },
         "gunEvent": {
           "$className": "BindableEvent"

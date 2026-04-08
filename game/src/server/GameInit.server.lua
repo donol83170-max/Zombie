@@ -20,6 +20,11 @@ local PhysicsService = game:GetService("PhysicsService")
 pcall(function()
 	PhysicsService:RegisterCollisionGroup("Zombies")
 	PhysicsService:CollisionGroupSetCollidable("Zombies", "Zombies", false)
+	
+	-- Groupe "Viewmodel" (nom exact attendu par le Fe Weapon Kit)
+	PhysicsService:RegisterCollisionGroup("Viewmodel")
+	PhysicsService:CollisionGroupSetCollidable("Viewmodel", "Default", false)
+	PhysicsService:CollisionGroupSetCollidable("Viewmodel", "Zombies", false)
 end)
 
 -- Références aux managers (ils s'initialisent eux-mêmes via .server.lua)
@@ -66,44 +71,6 @@ Players.PlayerAdded:Connect(function(player)
 	hardcoreVote.Name = "HardcoreVote"
 	hardcoreVote.Value = false
 	hardcoreVote.Parent = sessionData
-
-	-- Weapon data
-	local weaponName = Instance.new("StringValue")
-	weaponName.Name = "WeaponName"
-	weaponName.Value = "Pistol"
-	weaponName.Parent = sessionData
-
-	local currentAmmo = Instance.new("IntValue")
-	currentAmmo.Name = "CurrentAmmo"
-	currentAmmo.Value = 12
-	currentAmmo.Parent = sessionData
-
-	local reserveAmmo = Instance.new("IntValue")
-	reserveAmmo.Name = "ReserveAmmo"
-	reserveAmmo.Value = 48
-	reserveAmmo.Parent = sessionData
-
-	-- Arme primaire sauvegardée (pour le switch avec le couteau)
-	local primaryWeapon = Instance.new("StringValue")
-	primaryWeapon.Name = "PrimaryWeaponName"
-	primaryWeapon.Value = "Pistol"
-	primaryWeapon.Parent = sessionData
-
-	local primaryAmmo = Instance.new("IntValue")
-	primaryAmmo.Name = "PrimaryAmmo"
-	primaryAmmo.Value = 12
-	primaryAmmo.Parent = sessionData
-
-	local primaryReserve = Instance.new("IntValue")
-	primaryReserve.Name = "PrimaryReserve"
-	primaryReserve.Value = 48
-	primaryReserve.Parent = sessionData
-
-	-- Slot actif (1 = primaire, 2 = couteau)
-	local activeSlot = Instance.new("IntValue")
-	activeSlot.Name = "ActiveSlot"
-	activeSlot.Value = 1
-	activeSlot.Parent = sessionData
 
 	print("[ZombieWaves] Joueur connecté: " .. player.Name)
 end)
