@@ -120,11 +120,29 @@ workspace.ChildAdded:Connect(function(child)
 end)
 
 -- Serveur fait autorité sur les dégâts et récompense à chaque impact
-DamageZombie.OnServerEvent:Connect(function(player, zombieModel, isHeadshot, weaponName)
-	if not zombieModel or not zombieModel:IsA("Model") then return end
+-- Fonction commune de dégâts
+local function applyZombieDamage(player, zombieModel, isHeadshot, weaponName)
+	if not zombieModel or not zombieModel.Parent then return end
 	
-	-- Recherche ultra-robuste de l'Humanoid (même s'il est caché dans un sous-modèle)
-	local humanoid = zombieModel:FindFirstChildOfClass("Humanoid") or zombieModel:FindFirstChild("Humanoid", true)
+	-- Remonter la hiérarchie pour trouver le vrai modèle "Enemy_*"
+	local actualZombie = zombieModel
+	if actualZombie:IsA("Model") and actualZombie.Name:sub(1, 6) ~= "Enemy_" then
+		local current = actualZombie.Parent
+		for _ = 1, 5 do
+			if current == nil or current == workspace then break end
+			if current:IsA("Model") and current.Name:sub(1, 6) == "Enemy_" then
+				actualZombie = current
+				break
+			end
+			current = current.Parent
+		end
+	end
+	
+	-- Recherche ultra-robuste de l'Humanoid
+	local humanoid = actualZombie:FindFirstChildOfClass("Humanoid")
+	if not humanoid then
+		humanoid = actualZombie:FindFirstChild("Humanoid", true)
+	end
 	
 	if not humanoid or humanoid.Health <= 0 then return end
 	
@@ -135,15 +153,85 @@ DamageZombie.OnServerEvent:Connect(function(player, zombieModel, isHeadshot, wea
 	local headshotMult = (weaponData and weaponData.headshotMult) or 2.0
 	local damage = isHeadshot and (baseDamage * headshotMult) or baseDamage
 	
-	-- Appliquer les dégâts AU ZOMBIE
-	humanoid:TakeDamage(damage)
-	
-	print(string.format("[EconomyManager] HIT VALIDÉ ! Zombie: %s | Dégâts: %.0f | Vie restante: %.1f", zombieModel.Name, damage, humanoid.Health))
+	-- Appliquer les dégâts DIRECTEMENT (pas TakeDamage qui respecte les ForceFields)
+	humanoid.Health = math.max(0, humanoid.Health - damage)
 
 	-- Récompense d'impact : $50 headshot, $10 body
 	local reward = isHeadshot and 50 or 10
-	EconomyManager.addMoney(player, reward)
-end)
+	if player then
+		EconomyManager.addMoney(player, reward)
+	end
+end
+
+-- Serveur fait autorité sur les dégâts et récompense à chaque impact
+DamageZombie.OnServerEvent:Connect(applyZombieDamage)
+
+-- === HOOK FE WEAPON KIT ===
+-- Intercepte les vrais tirs parfaits du FE Weapon Kit !
+local function setupFEWeaponKitHooks()
+	local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+	if not remotes then return end
+
+	local function onKitHit(player, ...)
+		local args = {...}
+		local hitPart = nil
+		local targetModel = nil
+		
+		-- Fouiller les arguments pour trouver la part ou le zombie touché
+		for _, arg in ipairs(args) do
+			if typeof(arg) == "Instance" then
+				if arg:IsA("BasePart") then
+					hitPart = arg
+					targetModel = arg.Parent
+				elseif arg:IsA("Humanoid") then
+					targetModel = arg.Parent
+				elseif arg:IsA("Model") then
+					targetModel = arg
+				end
+				
+				if targetModel and targetModel.Name:sub(1, 6) == "Enemy_" then
+					break
+				end
+			end
+		end
+		
+		if targetModel and targetModel.Name:sub(1, 6) == "Enemy_" then
+			-- Si "player" n'est pas fourni (BindableEvent), essayer de deviner le tireur
+			if not player then
+				for _, p in ipairs(Players:GetPlayers()) do
+					if p.Character and hitPart and (p.Character.HumanoidRootPart.Position - hitPart.Position).Magnitude < 150 then
+						player = p
+						break
+					end
+				end
+			end
+			
+			local weaponName = "?"
+			if player and player.Character then
+				local tool = player.Character:FindFirstChildOfClass("Tool")
+				if tool then weaponName = tool.Name end
+			end
+			
+			local isHeadshot = hitPart and hitPart.Name == "Head" or false
+			applyZombieDamage(player, targetModel, isHeadshot, weaponName)
+		end
+	end
+
+	-- Connecte l'événement serveur normal
+	local inflictRemote = remotes:FindFirstChild("InflictTarget")
+	if inflictRemote and inflictRemote:IsA("RemoteEvent") then
+		inflictRemote.OnServerEvent:Connect(onKitHit)
+	end
+	
+	-- Connecte l'événement local aux NPCs
+	local inflictNPC = remotes:FindFirstChild("inflictTargetNPC")
+	if inflictNPC and inflictNPC:IsA("BindableEvent") then
+		inflictNPC.Event:Connect(function(...)
+			onKitHit(nil, ...) 
+		end)
+	end
+end
+task.spawn(setupFEWeaponKitHooks)
 
 -- Nettoyage
 Players.PlayerRemoving:Connect(function(player)

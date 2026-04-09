@@ -5,7 +5,7 @@
 local WALL_HEIGHT    = 60
 local WALL_THICKNESS = 10
 local WALL_Y         = 26
-local MARGIN         = 2   -- studs de marge autour de la map
+local MARGIN         = 50   -- studs de marge (augmenté à 50 pour ne pas coller à la grue)
 
 task.wait(2) -- Attendre que la map soit chargée
 
@@ -90,9 +90,9 @@ maxZ = maxZ + MARGIN
 
 -- === CRÉATION DES MURS ===
 
--- Supprimer les anciens murs s'ils existent
-for _, obj in ipairs(workspace:GetChildren()) do
-	if obj.Name:match("^Boundary_") then
+-- Supprimer les anciens murs s'ils existent (recherche profonde)
+for _, obj in ipairs(workspace:GetDescendants()) do
+	if obj:IsA("BasePart") and obj.Name:match("^Boundary_") then
 		obj:Destroy()
 	end
 end
@@ -117,11 +117,11 @@ local t    = WALL_THICKNESS
 local h    = WALL_HEIGHT
 local y    = WALL_Y
 
--- 4 murs autour de toute la map (plus de trou)
-createWall("Nord",  Vector3.new(cx, y, minZ - t/2), Vector3.new(lenX + t*2, h, t))
-createWall("Sud",   Vector3.new(cx, y, maxZ + t/2), Vector3.new(lenX + t*2, h, t))
-createWall("Ouest", Vector3.new(minX - t/2, y, cz), Vector3.new(t, h, lenZ))
-createWall("Est",   Vector3.new(maxX + t/2, y, cz), Vector3.new(t, h, lenZ))
+-- Les murs sont désactivés pour permettre un déplacement libre (ex: autour de la grue)
+-- createWall("Nord",  Vector3.new(cx, y, minZ - t/2), Vector3.new(lenX + t*2, h, t))
+-- createWall("Sud",   Vector3.new(cx, y, maxZ + t/2), Vector3.new(lenX + t*2, h, t))
+-- createWall("Ouest", Vector3.new(minX - t/2, y, cz), Vector3.new(t, h, lenZ))
+-- createWall("Est",   Vector3.new(maxX + t/2, y, cz), Vector3.new(t, h, lenZ))
 
 -- Stocker les limites dans _G pour que MapSpawnManager puisse les utiliser
 _G.MapBounds = {

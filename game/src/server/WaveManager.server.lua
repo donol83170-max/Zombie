@@ -75,18 +75,71 @@ local function getZombieSpawnPoints()
 	local children = spawns:GetChildren()
 	
 	if #children == 0 then
-		warn("[WaveManager] Le dossier ZombieSpawns est vide ! Création de 4 points de spawn par défaut...")
-		for i = 1, 4 do
-			local part = Instance.new("Part")
-			part.Name = "Spawn_" .. i
-			part.Anchored = true
-			part.CanCollide = false
-			part.Transparency = 1
-			part.Size = Vector3.new(4, 1, 4)
-			part.Position = Vector3.new(math.random(-50, 50), 5, math.random(-50, 50))
-			part.Parent = spawns
+		warn("[WaveManager] Le dossier ZombieSpawns est vide ! Génération de 8 points de spawn sur la map...")
+		
+		-- Détecter les limites de la map automatiquement
+		local minX, maxX, minZ, maxZ = math.huge, -math.huge, math.huge, -math.huge
+		for _, obj in ipairs(workspace:GetDescendants()) do
+			if obj:IsA("BasePart") and not obj.Name:match("Spawn") and obj.Anchored and obj.Size.X > 2 then
+				local pos = obj.Position
+				if pos.X < minX then minX = pos.X end
+				if pos.X > maxX then maxX = pos.X end
+				if pos.Z < minZ then minZ = pos.Z end
+				if pos.Z > maxZ then maxZ = pos.Z end
+			end
 		end
+		
+		-- Fallback si pas de géométrie détectée
+		if minX == math.huge then
+			minX, maxX, minZ, maxZ = -50, 50, -50, 50
+		end
+		
+		-- Générer 8 spawns en bordure de la map (pas au milieu avec les joueurs)
+		local rng = Random.new()
+		local spawnCount = 0
+		local attempts = 0
+		while spawnCount < 8 and attempts < 40 do
+			attempts += 1
+			-- Choisir un bord aléatoire (spawns en périphérie)
+			local edge = rng:NextInteger(1, 4)
+			local x, z
+			if edge == 1 then     -- bord nord
+				x = rng:NextNumber(minX + 10, maxX - 10)
+				z = minZ + rng:NextNumber(5, 30)
+			elseif edge == 2 then -- bord sud
+				x = rng:NextNumber(minX + 10, maxX - 10)
+				z = maxZ - rng:NextNumber(5, 30)
+			elseif edge == 3 then -- bord ouest
+				x = minX + rng:NextNumber(5, 30)
+				z = rng:NextNumber(minZ + 10, maxZ - 10)
+			else                  -- bord est
+				x = maxX - rng:NextNumber(5, 30)
+				z = rng:NextNumber(minZ + 10, maxZ - 10)
+			end
+			
+			-- Raycast vers le bas pour trouver le sol
+			local rayResult = workspace:Raycast(
+				Vector3.new(x, 200, z),
+				Vector3.new(0, -400, 0),
+				RaycastParams.new()
+			)
+			
+			if rayResult then
+				spawnCount += 1
+				local part = Instance.new("Part")
+				part.Name = "Spawn_Auto_" .. spawnCount
+				part.Anchored = true
+				part.CanCollide = false
+				part.Transparency = 1
+				part.Size = Vector3.new(4, 1, 4)
+				part.Position = rayResult.Position + Vector3.new(0, 3, 0)
+				part.Parent = spawns
+				print("[WaveManager] Spawn auto #" .. spawnCount .. " à " .. tostring(part.Position))
+			end
+		end
+		
 		children = spawns:GetChildren()
+		print("[WaveManager] " .. #children .. " points de spawn générés automatiquement !")
 	end
 	
 	-- Forcer tous les points de spawn à être invisibles en jeu au cas où
@@ -163,17 +216,16 @@ local function createZombieModel(zombieType, wave)
 			zombie.PrimaryPart = zombie:FindFirstChild("HumanoidRootPart") or zombie:FindFirstChild("Torso")
 		end
 
-		-- Supprimer les vieux scripts du template qui causent des erreurs
-		-- (Health et SoundScript cherchent Humanoid/Moan qui n'existent pas)
-		for _, s in ipairs(zombie:GetDescendants()) do
-			if s:IsA("Script") and (s.Name == "Health" or s.Name == "SoundScript") then
-				s:Destroy()
-			end
-		end
-
-		-- S'assurer que le zombie téléchargé peut bouger (désancrer toutes les parts)
+		-- PURGE TOTALE : supprimer TOUS les scripts, ForceFields et objets parasites
+		-- Les templates Toolbox contiennent souvent des scripts cachés qui régénèrent
+		-- la vie, ajoutent des ForceFields, ou overrident les propriétés du Humanoid
 		for _, desc in ipairs(zombie:GetDescendants()) do
-			if desc:IsA("BasePart") then
+			if desc:IsA("Script") or desc:IsA("LocalScript") or desc:IsA("ModuleScript") then
+				desc.Disabled = true
+				desc:Destroy()
+			elseif desc:IsA("ForceField") then
+				desc:Destroy()
+			elseif desc:IsA("BasePart") then
 				desc.Anchored = false
 			end
 		end
@@ -236,6 +288,12 @@ local function createZombieModel(zombieType, wave)
 	humanoid.MaxHealth = hp
 	humanoid.Health = hp
 	
+	-- Désactiver la régénération automatique de vie
+	humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
+	-- Supprimer tout script de santé résiduel
+	local healthScript = zombie:FindFirstChild("Health")
+	if healthScript then healthScript:Destroy() end
+	
 	-- Les zombies sont plus lents pendant les 5 premières manches (Manche 1 = 60%, Manche 5 = 100%)
 	local speedMult = 1
 	if wave < 5 then
@@ -270,9 +328,6 @@ local function createZombieModel(zombieType, wave)
 		if part:IsA("BasePart") then
 			part.CollisionGroup = "Zombies"
 			part.Anchored = false
-		elseif (part:IsA("Script") or part:IsA("LocalScript"))
-			and (part.Name == "Respawn" or part.Name == "Script") then
-			part:Destroy()
 		end
 	end
 
