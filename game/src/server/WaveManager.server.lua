@@ -159,6 +159,51 @@ local function getZombieSpawnPoints()
 	return children
 end
 
+-- === SONS ZOMBIE ===
+-- On réutilise les sons déjà dans les templates Toolbox.
+local function setupZombieSounds(zombie)
+	local rootPart = zombie:FindFirstChild("HumanoidRootPart") or zombie.PrimaryPart
+	local head = zombie:FindFirstChild("Head")
+	local soundParent = head or rootPart
+	if not soundParent then return end
+
+	-- Collecter TOUS les sons existants dans le template (modèles Toolbox)
+	local groanSounds = {}
+	for _, desc in ipairs(zombie:GetDescendants()) do
+		if desc:IsA("Sound") then
+			desc.RollOffMaxDistance = 60
+			desc.RollOffMinDistance = 8
+			desc.Looped = false
+			desc.Volume = math.min(desc.Volume, 0.4)
+			table.insert(groanSounds, desc)
+		end
+	end
+
+	-- Jouer un son aléatoire
+	if #groanSounds > 0 then
+		task.spawn(function()
+			local humanoid = zombie:FindFirstChildOfClass("Humanoid")
+			while zombie.Parent and humanoid and humanoid.Health > 0 do
+				task.wait(math.random(3, 6))
+				if zombie.Parent and humanoid.Health > 0 then
+					local snd = groanSounds[math.random(1, #groanSounds)]
+					snd.PlaybackSpeed = 0.8 + math.random() * 0.4
+					snd:Play()
+				end
+			end
+		end)
+	else
+		-- Activer les sons par défaut
+		local hrpSounds = rootPart and rootPart:GetChildren() or {}
+		for _, child in ipairs(hrpSounds) do
+			if child:IsA("Sound") then
+				child.Volume = 0.3
+				child.RollOffMaxDistance = 60
+			end
+		end
+	end
+end
+
 -- === ZOMBIE CREATION ===
 
 local function chooseZombieType(wave)
@@ -331,6 +376,9 @@ local function createZombieModel(zombieType, wave)
 		end
 	end
 
+	-- Ajouter/activer les sons zombies (grognements, attaque, mort)
+	setupZombieSounds(zombie)
+
 	return zombie
 end
 
@@ -398,6 +446,17 @@ local function setupZombieAI(zombie)
 							target.Character:SetAttribute("LastHitTime", tick())
 							-- On force 25 dégâts pour tuer en exactement 4 coups (sur 100 HP)
 							targetHumanoid:TakeDamage(25) 
+							
+							-- Jouer un son d'attaque si le zombie en a un
+							for _, snd in ipairs(zombie:GetDescendants()) do
+								if snd:IsA("Sound") then
+									local ln = string.lower(snd.Name)
+									if (ln == "attack" or ln == "bite" or ln == "hit") and not snd.Playing then
+										snd:Play()
+										break
+									end
+								end
+							end
 						end
 					end
 				end
@@ -411,6 +470,13 @@ local function setupZombieAI(zombie)
 	humanoid.Died:Connect(function()
 		isDead = true
 		zombiesAlive -= 1
+
+		-- Arrêter tous les sons en boucle du zombie
+		for _, snd in ipairs(zombie:GetDescendants()) do
+			if snd:IsA("Sound") and snd.Looped then
+				snd:Stop()
+			end
+		end
 
 		-- Retirer de la liste active
 		for i, z in ipairs(activeZombies) do
