@@ -29,21 +29,43 @@ WeaponConfig.Weapons = {
         displayName = "Pistolet",
         price = 250,
         damage = 15,
-        rpm = 300,                -- rounds per minute
+        rpm = 300,
         magSize = 12,
         reserveAmmo = 48,
-        reloadTime = 1.5,         -- secondes
-        fireMode = "semi",        -- semi / auto / burst
+        reloadTime = 1.5,
+        fireMode = "semi",
         range = 100,
         headshotMult = 2.0,
-
-        -- Configuration Visuelle FPS (RightGripAttachment)
         fpsOffset = Vector3.new(0.5, -1, -2.0),
         fpsRotation = Vector3.new(90, 0, 180),
         gripOffset = Vector3.new(-0.1, -0.3, -0.5),
-
-        -- Sons
-        fireSound = "rbxassetid://104267069535370", -- Son de tir classique de Roblox
+        fireSound = "rbxassetid://104267069535370",
+    },
+    SIGSAUERP250 = {
+        displayName = "SIG Sauer P250",
+        price = 0,
+        damage = 15,
+        rpm = 300,
+        magSize = 12,
+        reserveAmmo = 48,
+        reloadTime = 1.5,
+        fireMode = "semi",
+        range = 100,
+        headshotMult = 2.0,
+        fireSound = "rbxassetid://104267069535370",
+    },
+    M16A4 = {
+        displayName = "M16A4",
+        price = 2500,
+        damage = 25,
+        rpm = 450,
+        magSize = 30,
+        reserveAmmo = 120,
+        reloadTime = 2.5,
+        fireMode = "auto",
+        range = 120,
+        headshotMult = 2.0,
+        fireSound = "rbxassetid://10209867165",
     },
     SMG = {
         displayName = "SMG",

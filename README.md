@@ -179,6 +179,60 @@ Ajout des dossiers **Modules**, **Miscs** et **Remotes** avec `$ignoreUnknownIns
 
 ---
 
+## Bug resolu : Sons et effets visuels des armes muets (Fe Weapon Kit)
+
+### Symptome
+Les armes tiraient (douilles ejectees, zombies tues) mais aucun son de tir ne se produisait pour le tireur. Le muzzle flash ne s'affichait pas non plus.
+
+### Cause racine
+Le `GunClient` du Fe Weapon Kit ne joue pas les sons directement. Dans la fonction `Fire()`, il delègue la lecture audio via :
+```lua
+gunEvent:Fire("PlayAudio", { Instance = Track, ... })
+```
+Ce `gunEvent` est un `BindableEvent` dans `ReplicatedStorage.Events`. Le module `AudioHandler` (dans `ReplicatedStorage.Modules`) est cense ecouter cet evenement et jouer le son -- mais **il n'etait jamais `require()`-e par aucun script**. Resultat : `gunEvent:Fire("PlayAudio")` partait dans le vide, aucun son ne jouait jamais.
+
+### Erreurs detectees en cours de diagnostic
+- `GunGUI` absent du `GunClient` (le script bloquait sur `WaitForChild("GunGUI")`)
+- `FireSounds` nomme `"Fire"` au lieu de `"FireSounds"` dans `Handle > 1`
+- `FireSounds` place dans `Setting > 1` au lieu de `Handle > 1`
+- `FireSounds` cree comme Folder au lieu de Sound
+- Rojo servait depuis `Zombie/game/` mais les modifications etaient faites dans `game/` (mauvais dossier)
+
+### Solution
+Dans `ReplicatedStorage > Weapons > M16A4 > GunClient` et `SIGSAUERP250 > GunClient`, ajouter `Track:Play()` directement avant l'appel `gunEvent:Fire` dans la fonction `Fire()` (ligne ~1389) :
+
+```lua
+if Track ~= nil then
+    Track:Play()  -- AJOUT : joue le son localement pour le tireur
+    gunEvent:Fire("PlayAudio",
+        {
+            Instance = Track,
+            Origin = ShootingHandle:FindFirstChild("GunMuzzlePoint"..CurrentFireMode),
+            ...
+        },
+```
+
+Pas de risque de double son car `gunEvent` n'etait connecte a rien.
+
+### Structure correcte du Handle pour les sons
+```
+Tool
+  └── Handle
+       └── 1  (Attachment)
+            ├── FireSounds  (Sound) ← son de tir
+            ├── ReloadSound (Sound)
+            ├── EquippedSound (Sound)
+            └── ... (autres sons du kit)
+```
+
+### Lecons apprises
+1. Toujours verifier que Rojo sert depuis le **bon dossier** (`Zombie/game/`, pas `game/`)
+2. Le `GunClient` dans **ReplicatedStorage/Weapons** est celui qui tourne — pas celui dans StarterPack
+3. `gunEvent:Fire()` est un BindableEvent local -- si rien ne l'ecoute, les sons ne jouent jamais
+4. Utiliser la Command Bar Studio pour inspecter l'arbre d'instances en temps reel pendant le Play
+
+---
+
 ## Bugs restants
 
 - [ ] **Erreur ProjectileHandler:519** : `argument #1 expects a string, but EnumItem was passed` dans MakeImpactFX -- fix : `hitResult.Material.Name` au lieu de `hitResult.Material` (dans le .rbxl)
