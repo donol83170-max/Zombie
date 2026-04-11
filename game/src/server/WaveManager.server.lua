@@ -262,7 +262,7 @@ local function createZombieModel(zombieType, wave)
 		end
 
 		-- Supprimer uniquement les scripts parasites, garder Animate et l'IA zombie
-		local KEEP_SCRIPTS = { Animate = true }
+		local KEEP_SCRIPTS = { Animate = true, SoundScript = true }
 		for _, desc in ipairs(zombie:GetDescendants()) do
 			if desc:IsA("Script") or desc:IsA("LocalScript") or desc:IsA("ModuleScript") then
 				if not KEEP_SCRIPTS[desc.Name] then
