@@ -262,7 +262,7 @@ local function createZombieModel(zombieType, wave)
 		end
 
 		-- Supprimer uniquement les scripts parasites, garder Animate et l'IA zombie
-		local KEEP_SCRIPTS = { Animate = true, SoundScript = true }
+		local KEEP_SCRIPTS = { Animate = true, SoundScript = true, Script = true }
 		for _, desc in ipairs(zombie:GetDescendants()) do
 			if desc:IsA("Script") or desc:IsA("LocalScript") or desc:IsA("ModuleScript") then
 				if not KEEP_SCRIPTS[desc.Name] then
@@ -511,6 +511,11 @@ local function spawnWave(wave)
 	zombiesAlive = totalZombies
 
 	print("[WaveManager] Manche " .. wave .. " — " .. totalZombies .. " zombies")
+
+	-- Régénérer les points de spawn autour des joueurs avant chaque manche
+	if _G.RegenerateSpawnPoints then
+		_G.RegenerateSpawnPoints()
+	end
 
 	-- Notifier tous les clients
 	UpdateWave:FireAllClients(wave)
