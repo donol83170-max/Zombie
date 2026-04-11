@@ -261,13 +261,14 @@ local function createZombieModel(zombieType, wave)
 			zombie.PrimaryPart = zombie:FindFirstChild("HumanoidRootPart") or zombie:FindFirstChild("Torso")
 		end
 
-		-- PURGE TOTALE : supprimer TOUS les scripts, ForceFields et objets parasites
-		-- Les templates Toolbox contiennent souvent des scripts cachés qui régénèrent
-		-- la vie, ajoutent des ForceFields, ou overrident les propriétés du Humanoid
+		-- Supprimer uniquement les scripts parasites, garder Animate et l'IA zombie
+		local KEEP_SCRIPTS = { Animate = true }
 		for _, desc in ipairs(zombie:GetDescendants()) do
 			if desc:IsA("Script") or desc:IsA("LocalScript") or desc:IsA("ModuleScript") then
-				desc.Disabled = true
-				desc:Destroy()
+				if not KEEP_SCRIPTS[desc.Name] then
+					desc.Disabled = true
+					desc:Destroy()
+				end
 			elseif desc:IsA("ForceField") then
 				desc:Destroy()
 			elseif desc:IsA("BasePart") then
