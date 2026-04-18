@@ -6,6 +6,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
 local RunService = game:GetService("RunService")
+local Debris = game:GetService("Debris")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Events = ReplicatedStorage:WaitForChild("Events")
@@ -333,6 +334,11 @@ local function createZombieModel(zombieType, wave)
 	
 	humanoid.MaxHealth = hp
 	humanoid.Health = hp
+
+	-- Garantir la présence de l'Animator avant le spawn
+	if not humanoid:FindFirstChildOfClass("Animator") then
+		Instance.new("Animator").Parent = humanoid
+	end
 	
 	-- Désactiver la régénération automatique de vie
 	humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
@@ -388,6 +394,9 @@ local function setupZombieAI(zombie)
 	local humanoid = zombie:FindFirstChildOfClass("Humanoid")
 	local rootPart = zombie:FindFirstChild("HumanoidRootPart")
 	if not humanoid or not rootPart then return end
+
+	-- Forcer le serveur comme propriétaire réseau (empêche le client de prendre le contrôle)
+	rootPart:SetNetworkOwner(nil)
 
 	local zombieType = zombie:GetAttribute("ZombieType") or "Basic"
 	local damage = zombie:GetAttribute("Damage") or 10
@@ -467,6 +476,18 @@ local function setupZombieAI(zombie)
 		end
 	end)
 
+	-- Détruire le script Animate avant que son handler Died ne casse les Motor6D
+	humanoid.HealthChanged:Connect(function(health)
+		if health <= 0 then
+			for _, desc in ipairs(zombie:GetDescendants()) do
+				if desc:IsA("Script") and desc.Name == "Animate" then
+					desc:Destroy()
+					break
+				end
+			end
+		end
+	end)
+
 	-- Gestion de la mort du zombie
 	humanoid.Died:Connect(function()
 		isDead = true
@@ -489,17 +510,30 @@ local function setupZombieAI(zombie)
 
 		-- Notifier pour la récompense (EconomyManager écoute)
 		local reward = zombie:GetAttribute("Reward") or 10
-		ZombieDied:FireAllClients(zombieType, reward, rootPart.Position)
+		ZombieDied:FireAllClients(zombieType, reward, rootPart.Position, zombie)
 
 		-- Log
 		print("[WaveManager] Zombie mort (" .. zombieType .. ") — Restants: " .. zombiesAlive)
 
-		-- Nettoyage après délai
-		task.delay(GameConfig.ZOMBIE_DESPAWN_TIME, function()
-			if zombie and zombie.Parent then
-				zombie:Destroy()
-			end
-		end)
+		-- Ancrer le zombie sur place et désactiver les collisions
+		rootPart.Anchored = true
+		for _, part in ipairs(zombie:GetDescendants()) do
+			if part:IsA("BasePart") then part.CanCollide = false end
+		end
+
+		-- Jouer l'animation de mort côté serveur (se réplique à tous les clients)
+		local animator = humanoid:FindFirstChildOfClass("Animator")
+		local deathAnim = zombie:FindFirstChild("DeathAnimation", true)
+		if animator and deathAnim then
+			pcall(function()
+				local track = animator:LoadAnimation(deathAnim)
+				track.Priority = Enum.AnimationPriority.Action
+				track:Play()
+			end)
+		end
+
+		-- Nettoyage absolu après 6 secondes
+		Debris:AddItem(zombie, 6)
 	end)
 end
 

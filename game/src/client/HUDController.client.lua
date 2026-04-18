@@ -357,4 +357,22 @@ task.spawn(function()
 	end
 end)
 
+local function fadeOutZombie(zombieModel)
+	local tweenInfo = TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+	for _, desc in ipairs(zombieModel:GetDescendants()) do
+		if (desc:IsA("BasePart") or desc:IsA("Decal") or desc:IsA("Texture")) and desc.Name ~= "HumanoidRootPart" then
+			TweenService:Create(desc, tweenInfo, {Transparency = 1}):Play()
+		end
+	end
+end
+
+Events:WaitForChild("ZombieDied").OnClientEvent:Connect(function(zombieType, reward, position, zombieModel)
+	if not zombieModel or not zombieModel.Parent then return end
+	task.delay(4, function()
+		if zombieModel and zombieModel.Parent then
+			fadeOutZombie(zombieModel)
+		end
+	end)
+end)
+
 print("[HUDController] Initialisé !")
