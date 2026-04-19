@@ -32,6 +32,53 @@ local fireLoopRunning = false
 
 local UserInputService = game:GetService("UserInputService")
 
+-- === MUZZLE FLASH ===
+local function triggerMuzzleFlash()
+	local char = player.Character
+	if not char then return end
+	local tool = char:FindFirstChildOfClass("Tool")
+	if not tool then return end
+	local handle = tool:FindFirstChild("Handle")
+	if not handle then return end
+	local muzzle = handle:FindFirstChild("MuzzleFlashEffect") or tool:FindFirstChild("MuzzleFlashEffect")
+	if not muzzle then return end
+
+	local vmStorage = workspace.CurrentCamera:FindFirstChild("ViewmodelStorage")
+	local viewmodel = vmStorage and vmStorage:FindFirstChild("v_" .. tool.Name)
+	if viewmodel then
+		local barrelPart = nil
+		for _, child in ipairs(viewmodel:GetDescendants()) do
+			if child:IsA("BasePart") and (child.Name == "bout" or child.Name == "barrel") then
+				barrelPart = child
+				break
+			end
+		end
+		if barrelPart then
+			if barrelPart.Name == "barrel" then
+				muzzle.WorldPosition = (barrelPart.CFrame * CFrame.new(0, 0, barrelPart.Size.Z / 2)).Position
+			else
+				muzzle.WorldPosition = barrelPart.Position
+			end
+		end
+	end
+
+	for _, child in ipairs(muzzle:GetChildren()) do
+		if child:IsA("ParticleEmitter") then
+			if child.Name == "SmokeEffect" then
+				child:Emit(2)
+			else
+				child:Emit(3)
+			end
+		elseif child:IsA("PointLight") then
+			task.spawn(function()
+				child.Enabled = true
+				task.wait(0.05)
+				child.Enabled = false
+			end)
+		end
+	end
+end
+
 -- === RAYCAST ZOMBIE ===
 local function doZombieRaycast()
 	local char = player.Character
@@ -144,8 +191,10 @@ mouse.Button1Down:Connect(function()
 
 	-- Premier tir immédiat respectant l'anti-spam max
 	local now = tick()
-	if now - lastZombieHitTime >= 0.05 then
+	local magValue = tool:FindFirstChild("ValueFolder") and tool.ValueFolder:FindFirstChild("1") and tool.ValueFolder["1"]:FindFirstChild("Mag")
+	if now - lastZombieHitTime >= 0.05 and (not magValue or magValue.Value > 0) then
 		lastZombieHitTime = now
+		triggerMuzzleFlash()
 		doZombieRaycast()
 	end
 
@@ -162,7 +211,10 @@ mouse.Button1Down:Connect(function()
 				local cTool = cChar:FindFirstChildOfClass("Tool")
 				if not cTool then break end
 
+				local cMag = cTool:FindFirstChild("ValueFolder") and cTool.ValueFolder:FindFirstChild("1") and cTool.ValueFolder["1"]:FindFirstChild("Mag")
+				if cMag and cMag.Value <= 0 then break end
 				lastZombieHitTime = tick()
+				triggerMuzzleFlash()
 				doZombieRaycast()
 				task.wait(getFireInterval(cTool))
 			end

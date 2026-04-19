@@ -233,6 +233,55 @@ Tool
 
 ---
 
+## Muzzle Flash -- Probleme et Solution (19/04/2026)
+
+### Probleme
+Le Fe Weapon Kit utilise un **viewmodel separe** (`v_M16A4`) parenté a la Camera pour le rendu FPS. Le vrai Tool dans le character est invisible et positionne ailleurs. Donc tout tentative de lire la position des attachments du Tool Handle (GunFirePoint1, GunMuzzlePoint1) donnait une position incorrecte (dans le ciel ou au mauvais endroit).
+
+### Solution
+1. **Ajouter un Attachment** nomme `MuzzleFlashEffect` dans `StarterPack > M16A4 > Handle` contenant les ParticleEmitters + PointLight (depuis la Toolbox Roblox "Muzzle flash")
+2. **Dans `InputController.client.lua`**, a chaque tir :
+   - Trouver le viewmodel : `Camera.ViewmodelStorage.v_M16A4`
+   - Trouver la Part `bout` dans ses descendants (c'est le bout du canon du viewmodel)
+   - Assigner `muzzle.WorldPosition = bout.Position` avant d'emettre
+   - Appeler `:Emit(5)` sur chaque ParticleEmitter
+   - Allumer/eteindre le PointLight via `task.spawn` (0.05s)
+
+```lua
+local vmStorage = workspace.CurrentCamera:FindFirstChild("ViewmodelStorage")
+local viewmodel = vmStorage and vmStorage:FindFirstChild("v_" .. tool.Name)
+if viewmodel then
+    for _, child in ipairs(viewmodel:GetDescendants()) do
+        if child.Name == "bout" and child:IsA("BasePart") then
+            muzzle.WorldPosition = child.Position
+            break
+        end
+    end
+end
+```
+
+### Pourquoi ca marche
+La Part `bout` du viewmodel est la piece physique au bout du canon du modele FPS visible. Sa `.Position` est la position monde reelle du bout du canon, quelle que soit l'orientation de l'arme.
+
+### Proprietes finales des ParticleEmitters (MuzzleFlashEffect)
+Flash (ParticleEmitters du Toolbox) :
+- Size : 0.3
+- LightEmission : 0.5
+- Lifetime : 0.04 - 0.07s
+- Speed : 1 - 2
+- Emit : 3 par tir
+
+Fumee (ParticleEmitter "SmokeEffect" custom) :
+- Texture : rbxassetid://1370765866
+- Color : gris (180,180,180) → (100,100,100)
+- Size : 0.05 → 0.12
+- Lifetime : 0.1 - 0.2s
+- Speed : 0.2 - 0.5
+- Transparency : 0.2 → 1
+- Emit : 2 par tir
+
+---
+
 ## Bugs restants
 
 - [ ] **Erreur ProjectileHandler:519** : `argument #1 expects a string, but EnumItem was passed` dans MakeImpactFX -- fix : `hitResult.Material.Name` au lieu de `hitResult.Material` (dans le .rbxl)
