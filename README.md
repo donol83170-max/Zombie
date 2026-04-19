@@ -51,6 +51,24 @@
 - Fonctionne avec n'importe quel Model nomme "Gate" contenant "DoorCloseL" et "DoorCloseR"
 - **Positions relatives** : deplacer le portail dans Studio ne casse rien
 
+### Portes payantes (Barn & Fencefarmgate)
+Le GateManager est generalise : il gere maintenant plusieurs types de portes payantes configurables.
+
+- **Barn** : Model `barn` avec portes `barndoorL` / `barndoorR` — $1000, s'ouvre vers l'exterieur, pas d'apocalypse
+- **Fencefarmgate** : Model `fencefarmgate` avec portes `fencedoorL` / `fencedoorR` — $1000, s'ouvre vers l'exterieur, pas d'apocalypse
+
+**Options configurables par porte** (dans `findGates` de `GateManager.server.lua`) :
+| Option | Role |
+|--------|------|
+| `doorLName` / `doorRName` | Noms des deux battants (recherche recursive) |
+| `price` | Prix d'ouverture |
+| `triggersApocalypse` | `true`/`false` — declenche le passage en mode nuit/rouge |
+| `objectText` | Texte affiche sur le ProximityPrompt |
+| `openAngle` | Angle d'ouverture en degres (negatif = vers l'exterieur) |
+| `hingeShiftL` | Decale la charniere gauche le long de l'axe (+ = vers la droite) pour ajustement fin |
+
+**Supporte les portes en MeshPart seul** (pas besoin de Model contenant des parts) — la charniere est calculee automatiquement a partir du bounding box du mesh.
+
 ### HUD
 - **Barre de vie** (haut-gauche) avec couleur dynamique (vert/orange/rouge)
 - **Numero de manche** (haut-centre)

@@ -17,6 +17,8 @@ ApocalypseStarted.Parent = Events
 local OPEN_ANGLE = 90 -- degrés d'ouverture
 local OPEN_TIME = 1.5 -- secondes pour l'animation
 local GATE_PRICE = 1500
+local BARN_PRICE = 1000
+local FENCEFARMGATE_PRICE = 1000
 
 local apocalypseDone = false
 
@@ -71,31 +73,43 @@ local function triggerApocalypse()
 	print("[GateManager] Apocalypse déclenchée !")
 end
 
-local function setupGate(gateModel)
-	-- Trouver les deux battants (supporte Gate>Gate>Doors OU Gate>Doors directement)
+local function setupGate(gateModel, config)
+	config = config or {}
+	local doorLName = config.doorLName or "DoorCloseL"
+	local doorRName = config.doorRName or "DoorCloseR"
+	local price = config.price or GATE_PRICE
+	local triggersApocalypse = config.triggersApocalypse ~= false
+	local objectText = config.objectText or "Portail"
+	local openAngle = config.openAngle or OPEN_ANGLE
+	local hingeShiftL = config.hingeShiftL or 0 -- décale la charnière gauche le long de l'axe du portail (+ = vers la droite)
+
+	-- Trouver les deux battants (recherche récursive pour supporter les sous-dossiers Meshes/)
 	local innerGate = gateModel:FindFirstChild("Gate") or gateModel
 
-	local doorL = innerGate:FindFirstChild("DoorCloseL") or innerGate:FindFirstChild("DoorCLoseL")
-	local doorR = innerGate:FindFirstChild("DoorCloseR")
+	local doorL = innerGate:FindFirstChild(doorLName, true) or innerGate:FindFirstChild("DoorCLoseL", true)
+	local doorR = innerGate:FindFirstChild(doorRName, true)
 	if not doorL or not doorR then
-		warn("[GateManager] DoorCloseL ou DoorCloseR introuvable dans", gateModel:GetFullName())
+		warn("[GateManager]", doorLName, "ou", doorRName, "introuvable dans", gateModel:GetFullName())
 		return
 	end
 
-	-- Sauvegarder les CFrames initiales de toutes les parts
-	local doorLParts = {}
-	local doorRParts = {}
+	-- Collecte des parts : supporte une BasePart seule OU un Model contenant des BaseParts
+	local function collectParts(door)
+		local parts = {}
+		if door:IsA("BasePart") then
+			table.insert(parts, { part = door, originalCFrame = door.CFrame })
+		else
+			for _, p in ipairs(door:GetDescendants()) do
+				if p:IsA("BasePart") then
+					table.insert(parts, { part = p, originalCFrame = p.CFrame })
+				end
+			end
+		end
+		return parts
+	end
 
-	for _, part in ipairs(doorL:GetDescendants()) do
-		if part:IsA("BasePart") then
-			table.insert(doorLParts, { part = part, originalCFrame = part.CFrame })
-		end
-	end
-	for _, part in ipairs(doorR:GetDescendants()) do
-		if part:IsA("BasePart") then
-			table.insert(doorRParts, { part = part, originalCFrame = part.CFrame })
-		end
-	end
+	local doorLParts = collectParts(doorL)
+	local doorRParts = collectParts(doorR)
 
 	if #doorLParts == 0 or #doorRParts == 0 then
 		warn("[GateManager] Pas de BasePart trouvé dans les portes")
@@ -118,8 +132,20 @@ local function setupGate(gateModel)
 	local gateDir = (centerR - centerL).Unit
 
 	-- La charnière de chaque porte est à son bord OPPOSÉ à l'autre porte
-	-- = le point le plus éloigné de l'autre porte le long de l'axe du portail
 	local function getHinge(doorParts, awayDir)
+		-- Cas MeshPart seul : calcule le bord réel via la taille du part
+		if #doorParts == 1 then
+			local data = doorParts[1]
+			local cf = data.originalCFrame
+			local size = data.part.Size
+			local halfExtent = math.abs(cf.RightVector:Dot(awayDir)) * size.X/2
+				+ math.abs(cf.UpVector:Dot(awayDir)) * size.Y/2
+				+ math.abs(cf.LookVector:Dot(awayDir)) * size.Z/2
+			local hingePos = cf.Position + awayDir * halfExtent
+			return Vector3.new(hingePos.X, cf.Position.Y, hingePos.Z)
+		end
+
+		-- Multi-parts : point le plus éloigné de l'autre porte le long de l'axe
 		local bestPos = nil
 		local bestDot = -math.huge
 		for _, data in ipairs(doorParts) do
@@ -130,13 +156,12 @@ local function setupGate(gateModel)
 				bestPos = pos
 			end
 		end
-		-- Utiliser le Y moyen de la porte
 		local avgY = getDoorCenter(doorParts).Y
 		return Vector3.new(bestPos.X, avgY, bestPos.Z)
 	end
 
 	-- Porte gauche : charnière côté gauche (direction opposée à droite)
-	local hingeL = getHinge(doorLParts, -gateDir)
+	local hingeL = getHinge(doorLParts, -gateDir) + gateDir * hingeShiftL
 	-- Porte droite : charnière côté droite (direction opposée à gauche)
 	local hingeR = getHinge(doorRParts, gateDir)
 
@@ -153,8 +178,8 @@ local function setupGate(gateModel)
 	promptPart.Parent = innerGate
 
 	local prompt = Instance.new("ProximityPrompt")
-	prompt.ActionText = "Ouvrir — $" .. GATE_PRICE
-	prompt.ObjectText = "Portail"
+	prompt.ActionText = "Ouvrir — $" .. price
+	prompt.ObjectText = objectText
 	prompt.HoldDuration = 0.5
 	prompt.MaxActivationDistance = 30
 	prompt.RequiresLineOfSight = false  -- les barreaux du portail bloquent la vue
@@ -183,23 +208,25 @@ local function setupGate(gateModel)
 			local economy = _G.EconomyManager
 			if not economy then return end
 
-			if not economy.canAfford(player, GATE_PRICE) then
+			if not economy.canAfford(player, price) then
 				ShowNotification:FireClient(player, "Fonds insuffisants !", "#FF0000", 2)
 				return
 			end
 
-			local success = economy.removeMoney(player, GATE_PRICE)
+			local success = economy.removeMoney(player, price)
 			if not success then return end
 
 			isAnimating = true
-			rotateDoorAroundHinge(doorLParts, hingeL, OPEN_ANGLE, OPEN_TIME)
-			rotateDoorAroundHinge(doorRParts, hingeR, -OPEN_ANGLE, OPEN_TIME)
+			rotateDoorAroundHinge(doorLParts, hingeL, openAngle, OPEN_TIME)
+			rotateDoorAroundHinge(doorRParts, hingeR, -openAngle, OPEN_TIME)
 			isOpen = true
 
 			task.wait(OPEN_TIME)
 			isAnimating = false
 
-			triggerApocalypse()
+			if triggersApocalypse then
+				triggerApocalypse()
+			end
 
 			-- Une fois ouverte, on désactive le prompt définitivement
 			prompt.Enabled = false
@@ -218,6 +245,33 @@ local function findGates(parent)
 			local doorL = innerGate:FindFirstChild("DoorCloseL") or innerGate:FindFirstChild("DoorCLoseL")
 			if doorL then
 				setupGate(child)
+			end
+		elseif child:IsA("Model") and child.Name:lower() == "barn" then
+			if child:FindFirstChild("barndoorL", true) then
+				setupGate(child, {
+					doorLName = "barndoorL",
+					doorRName = "barndoorR",
+					price = BARN_PRICE,
+					triggersApocalypse = false,
+					objectText = "Barn",
+					openAngle = -OPEN_ANGLE, -- négatif = ouverture vers l'extérieur
+					hingeShiftL = 0.6, -- décale un peu la charnière gauche vers la droite
+				})
+			else
+				warn("[GateManager] Barn trouvée mais barndoorL introuvable dans", child:GetFullName())
+			end
+		elseif child:IsA("Model") and child.Name:lower() == "fencefarmgate" then
+			if child:FindFirstChild("fencedoorL", true) then
+				setupGate(child, {
+					doorLName = "fencedoorL",
+					doorRName = "fencedoorR",
+					price = FENCEFARMGATE_PRICE,
+					triggersApocalypse = false,
+					objectText = "Portail",
+					openAngle = -OPEN_ANGLE,
+				})
+			else
+				warn("[GateManager] fencefarmgate trouvé mais fencedoorL introuvable dans", child:GetFullName())
 			end
 		end
 		findGates(child)
