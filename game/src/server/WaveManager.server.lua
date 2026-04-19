@@ -476,9 +476,13 @@ local function setupZombieAI(zombie)
 		end
 	end)
 
-	-- Détruire le script Animate avant que son handler Died ne casse les Motor6D
+	-- Désactiver les collisions immédiatement à la mort pour éviter que le snap
+	-- des Motor6D (causé par la destruction d'Animate) propulse les joueurs proches
 	humanoid.HealthChanged:Connect(function(health)
 		if health <= 0 then
+			for _, part in ipairs(zombie:GetDescendants()) do
+				if part:IsA("BasePart") then part.CanCollide = false end
+			end
 			for _, desc in ipairs(zombie:GetDescendants()) do
 				if desc:IsA("Script") and desc.Name == "Animate" then
 					desc:Destroy()

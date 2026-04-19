@@ -3,14 +3,73 @@
 -- Fonctionne avec des positions relatives : déplacer le portail ne casse rien
 
 local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Events = ReplicatedStorage:WaitForChild("Events")
 local ShowNotification = Events:WaitForChild("ShowNotification")
 local UpdateMoney = Events:WaitForChild("UpdateMoney")
 
+-- Créer l'event pour notifier les clients (lampe torche)
+local ApocalypseStarted = Instance.new("RemoteEvent")
+ApocalypseStarted.Name = "ApocalypseStarted"
+ApocalypseStarted.Parent = Events
+
 local OPEN_ANGLE = 90 -- degrés d'ouverture
 local OPEN_TIME = 1.5 -- secondes pour l'animation
 local GATE_PRICE = 1500
+
+local apocalypseDone = false
+
+local function triggerApocalypse()
+	if apocalypseDone then return end
+	apocalypseDone = true
+
+	local tweenInfo = TweenInfo.new(5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+
+	-- Transition : nuit sombre, légère teinte rouge, encore jouable avec lampe torche
+	TweenService:Create(Lighting, tweenInfo, {
+		Ambient          = Color3.fromRGB(25, 10, 10),
+		OutdoorAmbient   = Color3.fromRGB(20, 8, 8),
+		Brightness       = 0.8,
+		ClockTime        = 0,
+		ColorShift_Top   = Color3.fromRGB(60, 20, 20),
+		ColorShift_Bottom = Color3.fromRGB(15, 5, 5),
+		FogColor         = Color3.fromRGB(30, 8, 8),
+		FogStart         = 40,
+		FogEnd           = 180,
+	}):Play()
+
+	local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere")
+	if not atmosphere then
+		atmosphere = Instance.new("Atmosphere")
+		atmosphere.Parent = Lighting
+	end
+	TweenService:Create(atmosphere, tweenInfo, {
+		Density   = 0.55,
+		Offset    = 0.1,
+		Color     = Color3.fromRGB(60, 15, 15),
+		Decay     = Color3.fromRGB(20, 5, 5),
+		Glare     = 0,
+		Haze      = 2,
+	}):Play()
+
+	local cc = Lighting:FindFirstChildOfClass("ColorCorrectionEffect")
+	if not cc then
+		cc = Instance.new("ColorCorrectionEffect")
+		cc.Parent = Lighting
+	end
+	TweenService:Create(cc, tweenInfo, {
+		TintColor  = Color3.fromRGB(255, 190, 190),
+		Saturation = -0.2,
+		Brightness = -0.05,
+		Contrast   = 0.15,
+	}):Play()
+
+	-- Notifier tous les clients pour activer la lampe torche
+	ApocalypseStarted:FireAllClients()
+
+	print("[GateManager] Apocalypse déclenchée !")
+end
 
 local function setupGate(gateModel)
 	-- Trouver les deux battants (supporte Gate>Gate>Doors OU Gate>Doors directement)
@@ -139,6 +198,8 @@ local function setupGate(gateModel)
 
 			task.wait(OPEN_TIME)
 			isAnimating = false
+
+			triggerApocalypse()
 
 			-- Une fois ouverte, on désactive le prompt définitivement
 			prompt.Enabled = false
