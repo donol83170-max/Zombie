@@ -69,6 +69,12 @@ Le GateManager est generalise : il gere maintenant plusieurs types de portes pay
 
 **Supporte les portes en MeshPart seul** (pas besoin de Model contenant des parts) — la charniere est calculee automatiquement a partir du bounding box du mesh.
 
+### Porte de garage (ElectricalManager)
+- S'ouvre automatiquement apres reparation de l'electricite (`_G.RepairElectricity`)
+- Animation de translation + rotation 90° (TweenService, 2s)
+- **Son d'ouverture** : `rbxassetid://132068473451354`, volume 2, audible dans un rayon de ~80 studs (RollOffMin 10 / Max 80)
+- Pour changer le son : modifier `garageSound.SoundId` dans `ElectricalManager.server.lua`
+
 ### HUD
 - **Barre de vie** (haut-gauche) avec couleur dynamique (vert/orange/rouge)
 - **Numero de manche** (haut-centre)

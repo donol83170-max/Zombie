@@ -312,9 +312,18 @@ local garageOpen = false
 local garageClosedCF = garageDoor.CFrame
 local garageOpenCF = garageClosedCF * CFrame.new(0, 5.6, 5.5) * CFrame.Angles(math.rad(90), 0, 0)
 
+local garageSound = Instance.new("Sound")
+garageSound.Name = "GarageOpenSound"
+garageSound.SoundId = "rbxassetid://132068473451354"
+garageSound.Volume = 2
+garageSound.RollOffMinDistance = 10
+garageSound.RollOffMaxDistance = 80
+garageSound.Parent = garageDoor
+
 local function openGarage()
 	if garageOpen then return end
 	garageOpen = true
+	garageSound:Play()
 	local tweenInfo = TweenInfo.new(GARAGE_TIME, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
 	TweenService:Create(garageDoor, tweenInfo, { CFrame = garageOpenCF }):Play()
 	task.wait(GARAGE_TIME)
