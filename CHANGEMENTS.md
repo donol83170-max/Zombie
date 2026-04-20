@@ -2,6 +2,31 @@
 
 Ce fichier liste toutes les améliorations de confort de jeu et de débuggage apportées au moteur de base après les premiers tests en conditions réelles sur Roblox Studio.
 
+### 🗓️ Mise à jour 20/04/2026 — Quête map Kalu (Électricité & Garage)
+
+Nouveau fichier : `game/src/server/ElectricalManager.server.lua`.
+
+**Boîte électrique** (modèle `ElectricalBox` avec enfant `door` dans le workspace) :
+- ProximityPrompt **gratuit** "Ouvrir" (touche E).
+- La porte s'ouvre comme une porte classique — animation de CFrame tweenée entre la position fermée actuelle et une position ouverte définie dans le code.
+- Le prompt d'ouverture est désactivé dès la première ouverture.
+
+**Outil de réparation** (modèle `RepairTool` placé n'importe où dans le workspace) :
+- ProximityPrompt "Ramasser" — ramasser pose l'attribut `HasRepairTool` sur le joueur et détruit le modèle.
+- Aucun équipement nécessaire (pas de Tool hotbar), c'est juste un flag invisible sur le joueur.
+
+**Réparation de l'électricité** :
+- Quand la boîte est ouverte, un second ProximityPrompt "Réparer" (touche F) apparaît dessus.
+- Déclenche sans l'outil → message d'erreur rouge.
+- Avec l'outil → consomme le flag, appelle `_G.RepairElectricity(player)`, le prompt se désactive.
+
+**Porte de garage** (modèle `Garage` avec enfant `garagedoor` BasePart) :
+- Fermée par défaut.
+- Bascule à 90° (style porte de garage basculante) quand l'électricité est réparée — tween entre les 2 CFrames fournis manuellement.
+
+**API exposée** :
+- `_G.RepairElectricity(player)` — ferme la boîte, ouvre le garage, diffuse le RemoteEvent `ElectricityRepaired` (dans `ReplicatedStorage.Events`) pour futurs effets client (sons, lumière, etc.).
+
 ### 🛠️ Configuration & Système (Rojo)
 - **Protection de la Map** : Ajout de la propriété de sécurité `ignoreUnknownInstances` dans la config Rojo. L'outil ne supprimera plus jamais la géométrie, les modèles 3D, ou les interfaces ajoutés manuellement dans Roblox Studio.
 - **Restauration de Rojo** : Suppression/Remplacement du vieux dossier Script pour que le serveur compile sans erreur.
