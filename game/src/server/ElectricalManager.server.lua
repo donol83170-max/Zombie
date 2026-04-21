@@ -142,9 +142,9 @@ if not doorBase then
 end
 
 -- Position ouverte fournie manuellement par le joueur
--- Ouverte : pos (1204.087, 11.017, -692.849) | orient (0, 0, 0)
+-- Ouverte : pos (1204.087, 9.517, -692.849) | orient (0, 0, 0)
 -- La position "fermée" est la position ACTUELLE de doorBase dans Studio
-local elecOpenRefCF = CFrame.new(1203.887, 11.017, -692.849)
+local elecOpenRefCF = CFrame.new(1203.887, 9.517, -692.849)
 	* CFrame.fromOrientation(0, 0, 0)
 -- Transformation monde : déplace doorBase de sa position actuelle à la position ouverte
 local elecOpenTransform = elecOpenRefCF * doorBase.CFrame:Inverse()
